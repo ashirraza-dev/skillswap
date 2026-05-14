@@ -34,12 +34,12 @@ import {
 // SECTION 2: FIREBASE CONFIG
 // ============================================
 const firebaseConfig = {
-  apiKey: "AIzaSyCHBzeGpUogq0djc47g2FLa4y6e6EGv4uU",
-  authDomain: "skillswap-d4f65.firebaseapp.com",
-  projectId: "skillswap-d4f65",
-  storageBucket: "skillswap-d4f65.firebasestorage.app",
-  messagingSenderId: "539262375570",
-  appId: "1:539262375570:web:4196eecfadd80bfb39384b"
+  apiKey: "AIzaSyAjAgUdBwyu820JqxtAr3546J90trnNImI",
+  authDomain: "skillswap-48163.firebaseapp.com",
+  projectId: "skillswap-48163",
+  storageBucket: "skillswap-48163.firebasestorage.app",
+  messagingSenderId: "953886423467",
+  appId: "1:953886423467:web:47dcc723d89d9765de7aee"
 }
 const fbApp = initializeApp(firebaseConfig)
 const db = getFirestore(fbApp)

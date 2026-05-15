@@ -792,7 +792,10 @@ const SettingsModal = ({ user, userData, onUpdateProfile, onSignOut, onClose, sh
     try {
       await onUpdateProfile({ displayName, bio, location, notifSounds, emailNotifs });
       showToast("success", "Settings saved!");
-    } catch { showToast("error", "Failed to save settings."); }
+    } catch (err) {
+      console.error("SettingsModal handleSave error:", err);
+      showToast("error", "Failed to save: " + (err?.message || "Unknown error"));
+    }
     setSaving(false);
   };
   return (
@@ -2359,7 +2362,10 @@ const ProfilePage = ({ user, userData, listings, reviews, favorites, messages, o
       await onUpdateProfile({ bio, displayName });
       setEditing(false);
       showToast("success", "Profile updated!");
-    } catch { showToast("error", "Failed to update profile."); }
+    } catch (err) {
+      console.error("ProfilePage handleSave error:", err);
+      showToast("error", "Failed to update profile: " + (err?.message || "Unknown error"));
+    }
     setSaving(false);
   };
 
@@ -2952,11 +2958,15 @@ export default function App() {
             await setDoc(userRef, newUser);
             setUserData(newUser);
           }
-          // Update activity log
+          // Update activity log safely
           const today = todayKey();
-          await updateDoc(doc(db, "users", firebaseUser.uid), {
-            [`activityLog.${today}`]: increment(1)
-          }).catch(() => {});
+          try {
+            await updateDoc(doc(db, "users", firebaseUser.uid), {
+              [`activityLog.${today}`]: increment(1)
+            });
+          } catch (activityErr) {
+            console.warn("Activity log update skipped:", activityErr.message);
+          }
         } catch (err) { console.error("User doc error:", err); }
         setCurrentPage("home");
       } else {
@@ -2988,6 +2998,23 @@ export default function App() {
     const u1 = onSnapshot(qSent, snap => { snap.docs.forEach(d => { allMsgs[d.id] = { id: d.id, ...d.data() }; }); merge({}); }, () => {});
     const u2 = onSnapshot(qRecv, snap => { snap.docs.forEach(d => { allMsgs[d.id] = { id: d.id, ...d.data() }; }); merge({}); }, () => {});
     return () => { u1(); u2(); };
+  }, [user]);
+
+  // Real-time user data listener — keeps userData in sync
+  useEffect(() => {
+    if (!user) return;
+    const userRef = doc(db, "users", user.uid);
+    const unsub = onSnapshot(userRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setUserData(prev => ({ ...prev, ...data }));
+        setFavorites(data.favorites || []);
+        setBlockedUsers(data.blockedUsers || []);
+      }
+    }, (err) => {
+      console.warn("User doc real-time listener error:", err.message);
+    });
+    return () => unsub();
   }, [user]);
 
   useEffect(() => {
@@ -3030,20 +3057,28 @@ export default function App() {
   // Listing Handlers
   const handleSubmitListing = async (data, editId) => {
     if (!user) return;
-    if (editId) {
-      await updateDoc(doc(db, "listings", editId), { ...data, updatedAt: serverTimestamp() });
-      setEditingListing(null);
-      navigateTo("mylistings");
-    } else {
-      await addDoc(collection(db, "listings"), {
-        ...data, userId: user.uid, userName: userData?.displayName || user.displayName || "Anonymous",
-        createdAt: serverTimestamp(), views: 0, favorites: 0,
-      });
-      await addDoc(collection(db, "notifications"), {
-        userId: user.uid, message: `Your listing "${data.skillOffered}" was posted!`,
-        link: "mylistings", read: false, createdAt: serverTimestamp()
-      }).catch(() => {});
-      navigateTo("mylistings");
+    try {
+      if (editId) {
+        await updateDoc(doc(db, "listings", editId), { ...data, updatedAt: serverTimestamp() });
+        setEditingListing(null);
+        navigateTo("mylistings");
+      } else {
+        await addDoc(collection(db, "listings"), {
+          ...data, userId: user.uid, userName: userData?.displayName || user.displayName || "Anonymous",
+          createdAt: serverTimestamp(), views: 0, favorites: 0,
+        });
+        try {
+          await addDoc(collection(db, "notifications"), {
+            userId: user.uid, message: `Your listing "${data.skillOffered}" was posted!`,
+            link: "mylistings", read: false, createdAt: serverTimestamp()
+          });
+        } catch (e) { console.warn("Notification creation skipped:", e.message); }
+        navigateTo("mylistings");
+      }
+    } catch (err) {
+      console.error("handleSubmitListing error:", err.code, err.message);
+      showToast("error", "Failed to save listing: " + (err.message || "Check Firestore rules."));
+      throw err;
     }
   };
 
@@ -3054,7 +3089,10 @@ export default function App() {
         await deleteDoc(doc(db, "listings", deleteTarget.id));
       }
       showToast("success", "Listing deleted.");
-    } catch { showToast("error", "Failed to delete."); }
+    } catch (err) {
+      console.error("handleDeleteListing error:", err.code, err.message);
+      showToast("error", "Failed to delete: " + (err.message || ""));
+    }
     setDeleteTarget(null);
   };
 
@@ -3062,7 +3100,15 @@ export default function App() {
     if (!user) { showToast("warning", "Please sign in to save favorites."); return; }
     const newFavs = favorites.includes(listingId) ? favorites.filter(f => f !== listingId) : [...favorites, listingId];
     setFavorites(newFavs);
-    try { await updateDoc(doc(db, "users", user.uid), { favorites: newFavs }); } catch {}
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+      if (snap.exists()) {
+        await updateDoc(userRef, { favorites: newFavs });
+      } else {
+        await setDoc(userRef, { uid: user.uid, displayName: user.displayName || "Anonymous", email: user.email || "", photoURL: user.photoURL || "", bio: "", blockedUsers: [], favorites: newFavs, recentlyViewed: [], activityLog: {}, createdAt: serverTimestamp(), streak: 0 });
+      }
+    } catch (err) { console.error("handleFavorite error:", err.message); }
     // Update listing favorites count
     if (!listingId.startsWith("demo")) {
       try {
@@ -3083,7 +3129,7 @@ export default function App() {
   const handleSendMessage = async (partner, text) => {
     if (!user || !text.trim()) return;
     try {
-      await addDoc(collection(db, "messages"), {
+      const docRef = await addDoc(collection(db, "messages"), {
         fromUserId: user.uid,
         fromUserName: userData?.displayName || user.displayName || "Anonymous",
         toUserId: partner.uid,
@@ -3092,15 +3138,30 @@ export default function App() {
         createdAt: serverTimestamp(),
         read: false,
       });
-    } catch (err) { showToast("error", "Failed to send message."); }
+      console.log("Message sent, doc ID:", docRef.id);
+    } catch (err) {
+      console.error("handleSendMessage error:", err.code, err.message);
+      showToast("error", "Failed to send: " + (err.message || "Check Firestore rules."));
+    }
   };
 
   const handleUpdateProfile = async (updates) => {
     if (!user) return;
-    await updateDoc(doc(db, "users", user.uid), updates);
-    setUserData(prev => ({ ...prev, ...updates }));
-    if (updates.displayName) {
-      await updateProfile(user, { displayName: updates.displayName });
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+      if (snap.exists()) {
+        await updateDoc(userRef, updates);
+      } else {
+        await setDoc(userRef, { uid: user.uid, displayName: user.displayName || "Anonymous", email: user.email || "", photoURL: user.photoURL || "", bio: "", blockedUsers: [], favorites: [], recentlyViewed: [], activityLog: {}, createdAt: serverTimestamp(), streak: 0, ...updates });
+      }
+      setUserData(prev => ({ ...prev, ...updates }));
+      if (updates.displayName && !user.isAnonymous) {
+        try { await updateProfile(user, { displayName: updates.displayName }); } catch (e) { console.warn("Auth profile update skipped:", e.message); }
+      }
+    } catch (err) {
+      console.error("handleUpdateProfile error:", err);
+      throw err;
     }
   };
 
@@ -3134,9 +3195,14 @@ export default function App() {
     setRecentlyViewed(prev => {
       const filtered = prev.filter(l => l.id !== listing.id);
       const updated = [{ id: listing.id, userId: listing.userId, userName: listing.userName, skillOffered: listing.skillOffered, skillWanted: listing.skillWanted, category: listing.category, viewedAt: Date.now() }, ...filtered].slice(0, 20);
-      // Save to Firestore
+      // Save to Firestore safely
       if (user) {
-        updateDoc(doc(db, "users", user.uid), { recentlyViewed: updated }).catch(() => {});
+        const userRef = doc(db, "users", user.uid);
+        getDoc(userRef).then(snap => {
+          if (snap.exists()) {
+            updateDoc(userRef, { recentlyViewed: updated }).catch(e => console.warn("recentlyViewed save skipped:", e.message));
+          }
+        }).catch(() => {});
       }
       return updated;
     });

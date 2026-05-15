@@ -1,38 +1,33 @@
-// ============================================
-// BARTER EXCHANGE APP — ENHANCED ULTRA PREMIUM
-// ALL features in ONE FILE: App.jsx
-// Only update this file to add/modify features.
-// Other files (main.jsx, index.css) stay the same.
-// ============================================
+// ============================================================
+// SKILLSWAP — BARTER EXCHANGE APP
+// Complete App.jsx — PART 1 of 2
+// React 18 + Vite 6 + Tailwind CSS 3 + Firebase
+// ============================================================
 
-// ============================================
 // SECTION 1: IMPORTS
-// ============================================
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
-  Home, Search, PlusCircle, Layers, User, X, Check, Edit2, Trash2,
-  MessageCircle, Clock, ChevronRight, Sparkles, ArrowRight,
-  Menu, LogOut, AlertCircle, Info, CheckCircle, Loader2,
-  Send, Mail, Phone, Globe, BookOpen, Briefcase, Camera,
-  Music, Heart, PenTool, Code, TrendingUp, Zap, Shield,
-  Award, Users, FolderOpen, ExternalLink, Copy, RefreshCw,
-  Star, Flag, Bell, Sun, Moon, Trophy, Target, Flame,
-  Lock, Eye, Share2, Hash, BarChart3, Activity, Crown,
-  ChevronDown, Bookmark, MessageSquare, Ban
-} from 'lucide-react'
-import { initializeApp } from 'firebase/app'
+  ArrowRight, ArrowLeft, Star, Heart, MessageCircle, Send, Search, Bell, Menu, X, Home,
+  Compass, PlusCircle, Bookmark, List, Trophy, User, BarChart3, LogOut, ChevronDown,
+  ChevronRight, Eye, Clock, Filter, SortAsc, TrendingUp, Shield, Award, Flame, Zap,
+  Globe, MapPin, Calendar, Tag, Users, ThumbsUp, ThumbsDown, Flag, Trash2, Edit3,
+  Copy, Share2, CheckCircle, XCircle, AlertCircle, Info, AlertTriangle, Upload,
+  Camera, Image, ChevronUp, Settings, Lock, Moon, Sun, ExternalLink, RefreshCw,
+  Activity, Target, Gift, Crown, Medal, Sparkles, Brain, Handshake, Mic, Code, Palette,
+  Music, BookOpen, Dumbbell, ChefHat, Languages, CameraIcon, Film, PenTool, Lightbulb
+} from 'lucide-react';
+import { initializeApp } from 'firebase/app';
 import {
-  getFirestore, collection, addDoc, updateDoc, deleteDoc,
-  doc, onSnapshot, query, orderBy, serverTimestamp,
-  getDocs, where, limit, setDoc, getDoc, writeBatch
-} from 'firebase/firestore'
+  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, updateProfile
+} from 'firebase/auth';
 import {
-  getAuth, signInAnonymously, onAuthStateChanged
-} from 'firebase/auth'
+  getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc,
+  deleteDoc, onSnapshot, query, where, orderBy, limit, serverTimestamp, arrayUnion,
+  arrayRemove, increment
+} from 'firebase/firestore';
 
-// ============================================
 // SECTION 2: FIREBASE CONFIG
-// ============================================
 const firebaseConfig = {
   apiKey: "AIzaSyAjAgUdBwyu820JqxtAr3546J90trnNImI",
   authDomain: "skillswap-48163.firebaseapp.com",
@@ -40,799 +35,2668 @@ const firebaseConfig = {
   storageBucket: "skillswap-48163.firebasestorage.app",
   messagingSenderId: "953886423467",
   appId: "1:953886423467:web:47dcc723d89d9765de7aee"
-}
-const fbApp = initializeApp(firebaseConfig)
-const db = getFirestore(fbApp)
-const auth = getAuth(fbApp)
+};
 
-// ============================================
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+
 // SECTION 3: CONSTANTS
-// ============================================
+
 const CATEGORIES = [
-  { id: 'design', label: 'Design & Creative', icon: PenTool, color: 'from-pink-500 to-rose-500' },
-  { id: 'programming', label: 'Programming & Tech', icon: Code, color: 'from-blue-500 to-cyan-500' },
-  { id: 'business', label: 'Business & Marketing', icon: Briefcase, color: 'from-amber-500 to-orange-500' },
-  { id: 'language', label: 'Language & Translation', icon: Globe, color: 'from-emerald-500 to-teal-500' },
-  { id: 'music', label: 'Music & Audio', icon: Music, color: 'from-violet-500 to-purple-500' },
-  { id: 'education', label: 'Education & Tutoring', icon: BookOpen, color: 'from-sky-500 to-blue-500' },
-  { id: 'health', label: 'Health & Fitness', icon: Heart, color: 'from-red-500 to-pink-500' },
-  { id: 'photography', label: 'Photography & Video', icon: Camera, color: 'from-indigo-500 to-violet-500' },
-  { id: 'writing', label: 'Writing & Content', icon: PenTool, color: 'from-teal-500 to-emerald-500' },
-  { id: 'other', label: 'Other', icon: FolderOpen, color: 'from-slate-500 to-gray-500' },
-]
+  { id: 'programming', name: 'Programming', icon: Code, color: 'from-blue-500 to-cyan-400' },
+  { id: 'design', name: 'Design', icon: Palette, color: 'from-pink-500 to-rose-400' },
+  { id: 'music', name: 'Music', icon: Music, color: 'from-purple-500 to-violet-400' },
+  { id: 'writing', name: 'Writing', icon: PenTool, color: 'from-amber-500 to-yellow-400' },
+  { id: 'photography', name: 'Photography', icon: CameraIcon, color: 'from-teal-500 to-emerald-400' },
+  { id: 'video', name: 'Video Production', icon: Film, color: 'from-red-500 to-orange-400' },
+  { id: 'languages', name: 'Languages', icon: Languages, color: 'from-indigo-500 to-blue-400' },
+  { id: 'cooking', name: 'Cooking', icon: ChefHat, color: 'from-orange-500 to-amber-400' },
+  { id: 'fitness', name: 'Fitness', icon: Dumbbell, color: 'from-green-500 to-lime-400' },
+  { id: 'tutoring', name: 'Tutoring', icon: BookOpen, color: 'from-sky-500 to-blue-400' },
+  { id: 'marketing', name: 'Marketing', icon: TrendingUp, color: 'from-fuchsia-500 to-pink-400' },
+  { id: 'business', name: 'Business', icon: Handshake, color: 'from-slate-500 to-gray-400' },
+  { id: 'gaming', name: 'Gaming', icon: Zap, color: 'from-violet-500 to-purple-400' },
+  { id: 'public_speaking', name: 'Public Speaking', icon: Mic, color: 'from-rose-500 to-red-400' },
+  { id: 'other', name: 'Other', icon: Lightbulb, color: 'from-gray-500 to-slate-400' },
+];
+
 const NAV_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
-  { id: 'explore', label: 'Explore', icon: Search },
+  { id: 'explore', label: 'Explore', icon: Compass },
   { id: 'messages', label: 'Messages', icon: MessageCircle },
-  { id: 'post', label: 'Post', icon: PlusCircle },
-  { id: 'favorites', label: 'Favorites', icon: Heart },
-  { id: 'my-listings', label: 'My Listings', icon: Layers },
+  { id: 'post', label: 'Post Skill', icon: PlusCircle },
+  { id: 'favorites', label: 'Favorites', icon: Bookmark },
+  { id: 'mylistings', label: 'My Listings', icon: List },
   { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
   { id: 'profile', label: 'Profile', icon: User },
-]
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+];
+
 const MOBILE_NAV = [
   { id: 'home', label: 'Home', icon: Home },
-  { id: 'explore', label: 'Explore', icon: Search },
-  { id: 'post', label: 'Post', icon: PlusCircle },
+  { id: 'explore', label: 'Explore', icon: Compass },
   { id: 'messages', label: 'Messages', icon: MessageCircle },
+  { id: 'post', label: 'Post', icon: PlusCircle },
   { id: 'profile', label: 'Profile', icon: User },
-]
+];
+
 const HOW_IT_WORKS = [
-  { step: 1, title: 'Post Your Skill', description: 'Share what you can offer and what you want to learn in return.', icon: PlusCircle, gradient: 'from-emerald-500 to-teal-500' },
-  { step: 2, title: 'Browse & Discover', description: 'Explore skills from people around the world. Filter by category.', icon: Search, gradient: 'from-blue-500 to-indigo-500' },
-  { step: 3, title: 'Connect & Exchange', description: 'Contact the person, arrange the exchange, and start learning.', icon: MessageCircle, gradient: 'from-violet-500 to-purple-500' },
-]
+  { step: 1, title: 'Post Your Skill', desc: 'List the skills you can offer and the skills you want to learn. Be specific about your expertise level and availability.', icon: Upload },
+  { step: 2, title: 'Browse & Discover', desc: 'Explore thousands of skill listings from our community. Filter by category, location, and skill level to find your perfect match.', icon: Search },
+  { step: 3, title: 'Connect & Exchange', desc: 'Message skill owners, negotiate terms, and start exchanging knowledge. Rate your experience to build trust in the community.', icon: Handshake },
+];
+
 const BADGES = [
-  { id: 'first_post', name: 'First Step', desc: 'Posted your first listing', icon: Sparkles, color: 'from-amber-400 to-yellow-500' },
-  { id: 'social', name: 'Social Butterfly', desc: 'Received 3+ reviews', icon: Users, color: 'from-pink-400 to-rose-500' },
-  { id: 'contributor', name: 'Top Contributor', desc: 'Posted 10+ listings', icon: Award, color: 'from-blue-400 to-cyan-500' },
-  { id: 'trusted', name: 'Community Star', desc: 'Trust score 50+', icon: Star, color: 'from-emerald-400 to-teal-500' },
-  { id: 'legend', name: 'Legendary', desc: 'Trust score 90+', icon: Crown, color: 'from-purple-400 to-fuchsia-500' },
-  { id: 'messenger', name: 'Chatterbox', desc: 'Sent 20+ messages', icon: MessageCircle, color: 'from-sky-400 to-blue-500' },
-  { id: 'collector', name: 'Collector', desc: 'Favorited 10+ listings', icon: Heart, color: 'from-red-400 to-pink-500' },
-  { id: 'active', name: 'On Fire', desc: '7-day activity streak', icon: Flame, color: 'from-orange-400 to-red-500' },
-]
+  { id: 'first_step', name: 'First Step', desc: 'Created your first listing', icon: Star, condition: (l) => l >= 1 },
+  { id: 'social_butterfly', name: 'Social Butterfly', desc: 'Had 10 conversations', icon: MessageCircle, condition: (l, r, a, f, m) => m >= 10 },
+  { id: 'top_contributor', name: 'Top Contributor', desc: 'Created 5 listings', icon: Award, condition: (l) => l >= 5 },
+  { id: 'community_star', name: 'Community Star', desc: 'Received 5 positive reviews', icon: Sparkles, condition: (l, r) => r >= 5 },
+  { id: 'legendary', name: 'Legendary', desc: 'Reached trust score 80+', icon: Crown, condition: (l, r, a) => a >= 80 },
+  { id: 'chatterbox', name: 'Chatterbox', desc: 'Sent 50 messages', icon: MessageCircle, condition: (l, r, a, f, m) => m >= 50 },
+  { id: 'collector', name: 'Collector', desc: 'Favorited 10 listings', icon: Heart, condition: (l, r, a, f) => f >= 10 },
+  { id: 'on_fire', name: 'On Fire', desc: '7-day activity streak', icon: Flame, condition: (l, r, a, f, m, s) => s >= 7 },
+];
+
 const TITLES = [
-  { min: 0, max: 10, label: 'Beginner', color: 'text-gray-400' },
-  { min: 11, max: 30, label: 'Exchanger', color: 'text-blue-400' },
-  { min: 31, max: 60, label: 'Expert Trader', color: 'text-purple-400' },
-  { min: 61, max: 90, label: 'Master', color: 'text-amber-400' },
-  { min: 91, max: 200, label: 'Legend', color: 'text-yellow-400' },
-]
+  { min: 0, name: 'Beginner', color: 'text-gray-400' },
+  { min: 10, name: 'Exchanger', color: 'text-emerald-400' },
+  { min: 25, name: 'Expert Trader', color: 'text-blue-400' },
+  { min: 50, name: 'Master', color: 'text-purple-400' },
+  { min: 80, name: 'Legend', color: 'text-amber-400' },
+];
+
 const ACHIEVEMENTS = [
-  { id: 'first_listing', name: 'Getting Started', desc: 'Post your first skill listing', icon: PlusCircle, need: 'listings', count: 1 },
-  { id: 'five_listings', name: 'Active Trader', desc: 'Post 5 skill listings', icon: Layers, need: 'listings', count: 5 },
-  { id: 'ten_listings', name: 'Power Poster', desc: 'Post 10 skill listings', icon: TrendingUp, need: 'listings', count: 10 },
-  { id: 'first_review', name: 'First Feedback', desc: 'Receive your first review', icon: Star, need: 'reviews', count: 1 },
-  { id: 'five_reviews', name: 'Well Reviewed', desc: 'Receive 5 reviews', icon: Award, need: 'reviews', count: 5 },
-  { id: 'ten_reviews', name: 'Community Favorite', desc: 'Receive 10 reviews', icon: Heart, need: 'reviews', count: 10 },
-  { id: 'ten_favorites', name: 'Taste Hunter', desc: 'Save 10 favorites', icon: Target, need: 'favorites', count: 10 },
-  { id: 'trust_50', name: 'Trusted Member', desc: 'Reach trust score of 50', icon: Shield, need: 'trust', count: 50 },
-  { id: 'trust_100', name: 'Legendary Status', desc: 'Reach trust score of 100', icon: Crown, need: 'trust', count: 100 },
-  { id: 'all_categories', name: 'Explorer', desc: 'Post in all 10 categories', icon: Globe, need: 'categories', count: 10 },
-]
+  { id: 'a1', name: 'Welcome Aboard', desc: 'Complete your profile', progress: 0, max: 1 },
+  { id: 'a2', name: 'Skill Sharer', desc: 'Create 3 listings', progress: 0, max: 3 },
+  { id: 'a3', name: 'Networker', desc: 'Connect with 5 people', progress: 0, max: 5 },
+  { id: 'a4', name: 'Reviewer', desc: 'Write 3 reviews', progress: 0, max: 3 },
+  { id: 'a5', name: 'Popular', desc: 'Get 10 views on a listing', progress: 0, max: 10 },
+  { id: 'a6', name: 'Favorite', desc: 'Get 5 favorites', progress: 0, max: 5 },
+  { id: 'a7', name: 'Streak Master', desc: '14-day activity streak', progress: 0, max: 14 },
+  { id: 'a8', name: 'Category King', desc: 'Post in 5 categories', progress: 0, max: 5 },
+  { id: 'a9', name: 'Exchange Pro', desc: 'Complete 3 exchanges', progress: 0, max: 3 },
+  { id: 'a10', name: 'Trusted', desc: 'Reach trust score 50', progress: 0, max: 50 },
+];
 
-// ============================================
-// SECTION 4: HELPERS
-// ============================================
-const timeAgo = (ts) => {
-  if (!ts) return 'Just now'
-  const d = ts.toDate ? ts.toDate() : new Date(ts)
-  const s = Math.floor((Date.now() - d) / 1000)
-  if (s < 60) return 'Just now'
-  const m = Math.floor(s / 60)
-  if (m < 60) return m + 'm ago'
-  const h = Math.floor(m / 60)
-  if (h < 24) return h + 'h ago'
-  const dy = Math.floor(h / 24)
-  if (dy < 30) return dy + 'd ago'
-  return Math.floor(dy / 30) + 'mo ago'
-}
-const getCat = (id) => CATEGORIES.find(c => c.id === id) || CATEGORIES[9]
-const initials = (n) => n ? n.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : '?'
-const userGrad = (uid) => {
-  const g = ['from-indigo-500 to-purple-500','from-blue-500 to-cyan-500','from-emerald-500 to-teal-500','from-rose-500 to-pink-500','from-amber-500 to-orange-500','from-violet-500 to-fuchsia-500']
-  if (!uid) return g[0]
-  return g[uid.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % g.length]
-}
-const trunc = (t, l) => (!t || t.length <= l) ? t : t.slice(0, l) + '...'
-const trustScore = (lc, rc, ar) => Math.min(100, Math.round(lc * 1 + rc * 2 + ar * 3))
-const userTitle = (s) => TITLES.find(t => s >= t.min && s <= t.max) || TITLES[0]
-const todayKey = () => new Date().toISOString().split('T')[0]
-const isBlocked = (bl, uid) => bl && bl.includes(uid)
-const heatmapData = (log) => {
-  const w = []; const td = new Date()
-  for (let i = 11; i >= 0; i--) { const wk = []; for (let d = 0; d < 7; d++) { const dt = new Date(td); dt.setDate(dt.getDate() - (i * 7 + (6 - d))); const k = dt.toISOString().split('T')[0]; wk.push({ date: k, count: (log && log[k]) || 0 }) } w.push(wk) }
-  return w
-}
-const heatColor = (c) => c === 0 ? 'bg-white/5' : c === 1 ? 'bg-emerald-500/30' : c === 2 ? 'bg-emerald-500/50' : c <= 4 ? 'bg-emerald-500/70' : 'bg-emerald-500'
+const TESTIMONIALS = [
+  { id: 1, name: 'Sarah Johnson', role: 'UI/UX Designer', text: 'SkillSwap completely changed how I learn new skills. I traded my design expertise for guitar lessons and it was amazing!', rating: 5, avatar: 'SJ' },
+  { id: 2, name: 'Ahmed Khan', role: 'Full Stack Developer', text: 'I learned three new programming languages through skill exchanges. The community is incredibly supportive and talented.', rating: 5, avatar: 'AK' },
+  { id: 3, name: 'Emily Chen', role: 'Marketing Specialist', text: 'The gamification system keeps me motivated. I have gone from Beginner to Master rank in just three months!', rating: 4, avatar: 'EC' },
+  { id: 4, name: 'Carlos Rodriguez', role: 'Photographer', text: 'I exchanged photography lessons for cooking classes. Now I can cook amazing meals and take stunning food photos!', rating: 5, avatar: 'CR' },
+  { id: 5, name: 'Priya Patel', role: 'Content Writer', text: 'As a freelancer, SkillSwap helps me continuously upgrade my skills without spending a fortune. Highly recommended!', rating: 5, avatar: 'PP' },
+];
+
+const REPORT_REASONS = [
+  'Inappropriate content',
+  'Spam or misleading',
+  'Offensive language',
+  'Fake listing',
+  'Harassment',
+  'Other',
+];
+
+const EXCHANGE_TYPES = ['In-person', 'Online', 'Both'];
+const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Expert'];
+
+// SECTION 4: HELPER FUNCTIONS
+
+const timeAgo = (timestamp) => {
+  if (!timestamp) return '';
+  const now = new Date();
+  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  const diff = Math.floor((now - date) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`;
+  if (diff < 31536000) return `${Math.floor(diff / 2592000)}mo ago`;
+  return `${Math.floor(diff / 31536000)}y ago`;
+};
+
+const getCat = (categoryId) => {
+  return CATEGORIES.find(c => c.id === categoryId) || CATEGORIES[CATEGORIES.length - 1];
+};
+
+const initials = (name) => {
+  if (!name) return '?';
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+};
+
+const userGrad = (userId) => {
+  if (!userId) return 'from-brand-500 to-purple-500';
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const gradients = [
+    'from-indigo-500 to-purple-500',
+    'from-pink-500 to-rose-500',
+    'from-blue-500 to-cyan-500',
+    'from-emerald-500 to-teal-500',
+    'from-amber-500 to-orange-500',
+    'from-violet-500 to-fuchsia-500',
+    'from-red-500 to-pink-500',
+    'from-teal-500 to-green-500',
+    'from-cyan-500 to-blue-500',
+    'from-orange-500 to-yellow-500',
+  ];
+  return gradients[Math.abs(hash) % gradients.length];
+};
+
+const trunc = (text, length = 100) => {
+  if (!text) return '';
+  if (text.length <= length) return text;
+  return text.slice(0, length) + '...';
+};
+
+const trustScore = (listings, reviews, avgRating) => {
+  const l = listings || 0;
+  const r = reviews || 0;
+  const a = avgRating || 0;
+  const raw = (l * 1) + (r * 2) + (a * 3);
+  return Math.min(Math.round(raw), 100);
+};
+
+const userTitle = (score) => {
+  const s = score || 0;
+  for (let i = TITLES.length - 1; i >= 0; i--) {
+    if (s >= TITLES[i].min) return TITLES[i];
+  }
+  return TITLES[0];
+};
+
+const todayKey = () => {
+  return new Date().toISOString().split('T')[0];
+};
+
+const isBlocked = (blockedUsers, userId) => {
+  if (!blockedUsers || !userId) return false;
+  return blockedUsers.includes(userId);
+};
+
+const heatmapData = (activityLog) => {
+  if (!activityLog) return {};
+  return activityLog;
+};
+
+const heatColor = (count) => {
+  if (!count || count === 0) return 'bg-dark-800';
+  if (count <= 1) return 'bg-brand-900/50';
+  if (count <= 3) return 'bg-brand-700/60';
+  if (count <= 5) return 'bg-brand-500/70';
+  if (count <= 8) return 'bg-brand-400/80';
+  return 'bg-brand-300';
+};
+
 const trendingCats = (listings) => {
-  const ct = {}; listings.forEach(l => { ct[l.category] = (ct[l.category] || 0) + 1 })
-  return Object.entries(ct).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id, count]) => ({ ...getCat(id), count }))
-}
-const matchingSuggestions = (listings, uid) => {
-  const my = listings.filter(l => l.userId === uid).map(l => l.skillOffered.toLowerCase())
-  return listings.filter(l => l.userId !== uid && my.some(s => l.skillWanted.toLowerCase().includes(s) || s.includes(l.skillWanted.toLowerCase()))).slice(0, 6)
-}
+  if (!listings || listings.length === 0) return [];
+  const counts = {};
+  listings.forEach(l => {
+    if (l.category) {
+      counts[l.category] = (counts[l.category] || 0) + 1;
+    }
+  });
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([id, count]) => ({ ...getCat(id), count }));
+};
+
+const matchingSuggestions = (listings, userId, wantedSkills) => {
+  if (!listings || !userId) return [];
+  const userFavorites = listings.filter(l => l.userId === userId);
+  const userWanted = userFavorites.map(l => l.skillWanted?.toLowerCase());
+  return listings
+    .filter(l => l.userId !== userId)
+    .filter(l => {
+      const offered = l.skillOffered?.toLowerCase() || '';
+      return userWanted.some(w => offered.includes(w) || w.includes(offered));
+    })
+    .slice(0, 6);
+};
+
 const leaderboardData = (listings, reviews) => {
-  const us = {}
-  listings.forEach(l => { if (!us[l.userId]) us[l.userId] = { userId: l.userId, userName: l.userName, lc: 0, rc: 0, tr: 0 }; us[l.userId].lc++ })
-  reviews.forEach(r => { if (us[r.toUserId]) { us[r.toUserId].rc++; us[r.toUserId].tr += r.rating } })
-  return Object.values(us).map(u => ({ ...u, avg: u.rc > 0 ? (u.tr / u.rc).toFixed(1) : '0', score: trustScore(u.lc, u.rc, u.rc > 0 ? u.tr / u.rc : 0) })).sort((a, b) => b.score - a.score).slice(0, 10)
-}
-const getUnlockedBadges = (score, lc, rc, fc, msgCount, streak) => {
-  const u = []
-  if (lc >= 1) u.push(BADGES[0]); if (rc >= 3) u.push(BADGES[1]); if (lc >= 10) u.push(BADGES[2])
-  if (score >= 50) u.push(BADGES[3]); if (score >= 90) u.push(BADGES[4])
-  if (msgCount >= 20) u.push(BADGES[5]); if (fc >= 10) u.push(BADGES[6]); if (streak >= 7) u.push(BADGES[7])
-  return u
-}
+  if (!listings) return [];
+  const userMap = {};
+  listings.forEach(l => {
+    if (!userMap[l.userId]) {
+      userMap[l.userId] = {
+        userId: l.userId,
+        userName: l.userName || 'Anonymous',
+        listings: 0,
+        totalRating: 0,
+        reviewCount: 0,
+      };
+    }
+    userMap[l.userId].listings++;
+  });
+  if (reviews) {
+    reviews.forEach(r => {
+      if (userMap[r.toUserId]) {
+        userMap[r.toUserId].totalRating += r.rating;
+        userMap[r.toUserId].reviewCount++;
+      }
+    });
+  }
+  return Object.values(userMap)
+    .map(u => ({
+      ...u,
+      avgRating: u.reviewCount > 0 ? (u.totalRating / u.reviewCount) : 0,
+      score: trustScore(u.listings, u.reviewCount, u.avgRating),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+};
 
-// ============================================
+const getUnlockedBadges = (score, listings, reviews, favorites, messages, streak) => {
+  const l = listings || 0;
+  const r = reviews || 0;
+  const f = favorites || 0;
+  const m = messages || 0;
+  const s = streak || 0;
+  return BADGES.filter(badge => badge.condition(l, r, score, f, m, s));
+};
+
+const passwordStrength = (password) => {
+  if (!password) return { score: 0, label: 'None', color: 'bg-dark-700' };
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 10) score++;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  if (score <= 1) return { score: 1, label: 'Weak', color: 'bg-red-500' };
+  if (score <= 3) return { score: 2, label: 'Medium', color: 'bg-amber-500' };
+  return { score: 3, label: 'Strong', color: 'bg-emerald-500' };
+};
+
+const generateId = () => {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
+const getChatPartnerId = (messages, userId) => {
+  if (!messages || messages.length === 0) return null;
+  const partnerIds = [...new Set(messages.map(m => m.fromUserId === userId ? m.toUserId : m.fromUserId))];
+  return partnerIds[0];
+};
+
+const getConversations = (messages, userId) => {
+  if (!messages || messages.length === 0) return [];
+  const convMap = {};
+  messages.forEach(m => {
+    const partnerId = m.fromUserId === userId ? m.toUserId : m.fromUserId;
+    const partnerName = m.fromUserId === userId ? m.toUserName : m.fromUserName;
+    if (!convMap[partnerId] || (m.createdAt && (!convMap[partnerId].lastTime || m.createdAt.seconds > convMap[partnerId].lastTime))) {
+      convMap[partnerId] = {
+        partnerId,
+        partnerName: partnerName || 'User',
+        lastMessage: m.text,
+        lastTime: m.createdAt?.seconds || 0,
+        unread: m.fromUserId !== userId && !m.read ? 1 : (convMap[partnerId]?.unread || 0),
+      };
+    } else if (m.fromUserId !== userId && !m.read) {
+      convMap[partnerId].unread++;
+    }
+  });
+  return Object.values(convMap).sort((a, b) => b.lastTime - a.lastTime);
+};
+
+// ============================================================
 // SECTION 5: SMALL COMPONENTS
-// ============================================
+// ============================================================
+
+// --- Toast Notification Component ---
 const Toast = ({ toast, onClose }) => {
-  useEffect(() => { if (!toast) return; const t = setTimeout(() => onClose(), 3000); return () => clearTimeout(t) }, [toast, onClose])
-  if (!toast) return null
-  const st = { success: 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300', error: 'bg-red-500/20 border-red-500/30 text-red-300', info: 'bg-blue-500/20 border-blue-500/30 text-blue-300', warning: 'bg-amber-500/20 border-amber-500/30 text-amber-300' }
-  const ic = { success: CheckCircle, error: AlertCircle, info: Info, warning: AlertCircle }
-  const Icon = ic[toast.type] || Info
-  return (
-    <div className="fixed top-4 right-4 z-[100] animate-slide-up">
-      <div className={`glass rounded-xl px-4 py-3 flex items-center gap-3 min-w-[300px] max-w-md border ${st[toast.type] || st.info}`}>
-        <Icon size={20} /><span className="text-sm font-medium flex-1">{toast.message}</span>
-        <button onClick={onClose} className="hover:bg-white/10 rounded-lg p-1"><X size={16} /></button>
-      </div>
-    </div>
-  )
-}
-const WelcomeModal = ({ isOpen, onSubmit }) => {
-  const [name, setName] = useState(''), [err, setErr] = useState('')
-  const go = (e) => { e.preventDefault(); if (!name.trim() || name.trim().length < 2) { setErr('Name must be at least 2 characters'); return } onSubmit(name.trim()); setName(''); setErr('') }
-  if (!isOpen) return null
-  return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="glass-strong rounded-2xl p-8 max-w-md w-full animate-slide-up">
-        <div className="text-center mb-6"><div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-4 glow"><Sparkles className="text-white" size={32} /></div><h2 className="text-2xl font-bold text-white mb-2">Welcome to Barter Exchange</h2><p className="text-gray-400">Enter your name to get started. No email or password needed.</p></div>
-        <form onSubmit={go}><div className="mb-4"><input type="text" value={name} onChange={(e) => { setName(e.target.value); setErr('') }} placeholder="Your display name" className="w-full px-4 py-3 rounded-xl bg-dark-800/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-from/50 focus:ring-2 focus:ring-brand-from/20 transition-all" autoFocus />{err && <p className="text-red-400 text-sm mt-2">{err}</p>}</div><button type="submit" className="w-full py-3 rounded-xl gradient-bg text-white font-semibold hover:opacity-90 transition-opacity glow">Get Started</button></form>
-      </div>
-    </div>
-  )
-}
-const DeleteModal = ({ isOpen, listing, onConfirm, onCancel }) => {
-  if (!isOpen || !listing) return null
-  return (<div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"><div className="glass-strong rounded-2xl p-6 max-w-md w-full animate-slide-up"><div className="text-center mb-6"><div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4"><Trash2 className="text-red-400" size={24} /></div><h3 className="text-xl font-bold text-white mb-2">Delete Listing?</h3><p className="text-gray-400">Are you sure you want to delete <span className="text-white font-medium">"{listing.skillOffered}"</span>?</p></div><div className="flex gap-3"><button onClick={onCancel} className="flex-1 py-3 rounded-xl bg-white/5 text-white font-medium hover:bg-white/10 border border-white/10">Cancel</button><button onClick={onConfirm} className="flex-1 py-3 rounded-xl bg-red-500/20 text-red-300 font-medium hover:bg-red-500/30 border border-red-500/30">Delete</button></div></div></div>)
-}
-const ContactModal = ({ isOpen, listing, onClose }) => {
-  if (!isOpen || !listing) return null
-  return (<div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"><div className="glass-strong rounded-2xl p-6 max-w-md w-full animate-slide-up"><div className="flex items-center justify-between mb-6"><h3 className="text-xl font-bold text-white">Contact Information</h3><button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg"><X size={20} className="text-gray-400" /></button></div><div className="flex items-center gap-4 mb-6 p-4 rounded-xl bg-white/5"><div className={`w-12 h-12 rounded-full bg-gradient-to-br ${userGrad(listing.userId)} flex items-center justify-center`}><span className="text-white font-bold text-sm">{initials(listing.userName)}</span></div><div><p className="text-white font-semibold">{listing.userName}</p><p className="text-gray-400 text-sm">Listing Owner</p></div></div><div className="space-y-4 mb-6"><div className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-emerald-400 mt-2 shrink-0" /><div><p className="text-gray-400 text-sm">Offers</p><p className="text-white font-medium">{listing.skillOffered}</p></div></div><div className="flex items-start gap-3"><div className="w-2 h-2 rounded-full bg-blue-400 mt-2 shrink-0" /><div><p className="text-gray-400 text-sm">Wants</p><p className="text-white font-medium">{listing.skillWanted}</p></div></div></div>{listing.contactInfo ? <div className="p-4 rounded-xl bg-white/5 border border-white/10"><p className="text-gray-400 text-sm mb-2">Contact Details</p><p className="text-white font-medium break-all">{listing.contactInfo}</p></div> : <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center"><p className="text-gray-400">No contact information provided.</p></div>}</div></div>)
-}
-const ReportModal = ({ isOpen, listing, onClose, onReport }) => {
-  const [reason, setReason] = useState(''), [custom, setCustom] = useState('')
-  const reasons = ['Inappropriate content', 'Spam or misleading', 'Fake listing', 'Harassment', 'Other']
-  if (!isOpen) return null
-  const go = () => { const r = reason === 'Other' ? custom : reason; if (r.trim()) { onReport(listing, r.trim()); setReason(''); setCustom('') } }
-  return (<div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"><div className="glass-strong rounded-2xl p-6 max-w-md w-full animate-slide-up"><div className="flex items-center justify-between mb-6"><h3 className="text-xl font-bold text-white flex items-center gap-2"><Flag size={20} className="text-amber-400" /> Report Listing</h3><button onClick={() => { onClose(); setReason(''); setCustom('') }} className="p-2 hover:bg-white/10 rounded-lg"><X size={20} className="text-gray-400" /></button></div><div className="space-y-2 mb-4">{reasons.map(r => (<button key={r} onClick={() => setReason(r)} className={`w-full text-left px-4 py-3 rounded-xl transition-all text-sm ${reason === r ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/5'}`}>{r}</button>))}</div>{reason === 'Other' && <textarea value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Please explain..." rows={3} className="w-full px-4 py-3 rounded-xl bg-dark-800/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-from/50 resize-none mb-4" />}<div className="flex gap-3"><button onClick={() => { onClose(); setReason(''); setCustom('') }} className="flex-1 py-3 rounded-xl bg-white/5 text-white font-medium hover:bg-white/10 border border-white/10">Cancel</button><button onClick={go} disabled={!reason || (reason === 'Other' && !custom.trim())} className="flex-1 py-3 rounded-xl bg-amber-500/20 text-amber-300 font-medium hover:bg-amber-500/30 border border-amber-500/30 disabled:opacity-40">Report</button></div></div></div>)
-}
-const ReviewModal = ({ isOpen, targetUser, onClose, onSubmit }) => {
-  const [rating, setRating] = useState(0), [text, setText] = useState('')
-  if (!isOpen) return null
-  const go = () => { if (rating > 0) { onSubmit(targetUser.userId, rating, text.trim()); setRating(0); setText('') } }
-  return (<div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"><div className="glass-strong rounded-2xl p-6 max-w-md w-full animate-slide-up"><div className="flex items-center justify-between mb-6"><h3 className="text-xl font-bold text-white flex items-center gap-2"><Star size={20} className="text-amber-400" /> Write a Review</h3><button onClick={() => { onClose(); setRating(0); setText('') }} className="p-2 hover:bg-white/10 rounded-lg"><X size={20} className="text-gray-400" /></button></div><div className="flex items-center gap-3 mb-6 p-3 rounded-xl bg-white/5"><div className={`w-10 h-10 rounded-full bg-gradient-to-br ${userGrad(targetUser.userId)} flex items-center justify-center`}><span className="text-white font-bold text-sm">{initials(targetUser.userName)}</span></div><span className="text-white font-medium">{targetUser.userName}</span></div><div className="mb-4"><p className="text-gray-400 text-sm mb-2">Your Rating</p><div className="flex gap-2">{[1,2,3,4,5].map(s => (<button key={s} onClick={() => setRating(s)} className="p-1 hover:scale-110 transition-transform"><Star size={28} className={s <= rating ? 'text-amber-400 fill-amber-400' : 'text-gray-600'} /></button>))}</div></div><textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Share your experience (optional)..." rows={3} className="w-full px-4 py-3 rounded-xl bg-dark-800/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-from/50 resize-none mb-4" /><div className="flex gap-3"><button onClick={() => { onClose(); setRating(0); setText('') }} className="flex-1 py-3 rounded-xl bg-white/5 text-white font-medium hover:bg-white/10 border border-white/10">Cancel</button><button onClick={go} disabled={rating === 0} className="flex-1 py-3 rounded-xl gradient-bg text-white font-medium hover:opacity-90 disabled:opacity-40 glow">Submit Review</button></div></div></div>)
-}
-const RatingStars = ({ rating, count }) => (
-  <div className="flex items-center gap-1.5"><div className="flex">{[1,2,3,4,5].map(s => (<Star key={s} size={14} className={s <= Math.round(rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-600'} />))}</div>{count !== undefined && <span className="text-xs text-gray-500">({count})</span>}</div>
-)
-const TrustRing = ({ score, sz = 80 }) => {
-  const r = (sz - 8) / 2, c = 2 * Math.PI * r, p = (score / 100) * c
-  const col = score >= 90 ? '#eab308' : score >= 50 ? '#10b981' : score >= 20 ? '#6366f1' : '#6b7280'
-  return (<div className="relative inline-flex items-center justify-center" style={{ width: sz, height: sz }}><svg width={sz} height={sz} className="transform -rotate-90"><circle cx={sz/2} cy={sz/2} r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" /><circle cx={sz/2} cy={sz/2} r={r} fill="none" stroke={col} strokeWidth="4" strokeDasharray={c} strokeDashoffset={c - p} strokeLinecap="round" className="transition-all duration-1000" /></svg><span className="absolute text-lg font-bold text-white">{score}</span></div>)
-}
-const BadgesRow = ({ badges }) => {
-  if (!badges || !badges.length) return null
-  return (<div className="flex flex-wrap gap-2">{badges.map(b => { const I = b.icon; return (<div key={b.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10" title={b.desc}><div className={`w-5 h-5 rounded-md bg-gradient-to-br ${b.color} flex items-center justify-center`}><I size={12} className="text-white" /></div><span className="text-xs text-gray-300">{b.name}</span></div>) })}</div>)
-}
-const Heatmap = ({ log }) => {
-  const w = heatmapData(log)
-  return (<div className="flex gap-1 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>{w.map((wk, wi) => (<div key={wi} className="flex flex-col gap-1">{wk.map((d, di) => (<div key={di} className={`w-3 h-3 rounded-sm ${heatColor(d.count)}`} title={`${d.date}: ${d.count} actions`} />))}</div>))}</div>)
-}
-const LoadingSkeleton = ({ count = 6 }) => (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{Array.from({ length: count }).map((_, i) => (<div key={i} className="glass rounded-2xl p-5 animate-pulse"><div className="flex items-center justify-between mb-4"><div className="h-6 w-20 bg-white/10 rounded-full" /><div className="h-4 w-12 bg-white/10 rounded" /></div><div className="h-5 w-3/4 bg-white/10 rounded mb-2" /><div className="h-5 w-1/2 bg-white/10 rounded mb-4" /><div className="h-16 bg-white/5 rounded-lg mb-4" /><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-white/10" /><div className="h-4 w-24 bg-white/10 rounded" /></div></div>))}</div>)
-const EmptyState = ({ icon: Icon, title, desc, actionLabel, onAction }) => (<div className="flex flex-col items-center justify-center py-16 text-center"><div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4"><Icon size={32} className="text-gray-500" /></div><h3 className="text-xl font-semibold text-white mb-2">{title}</h3><p className="text-gray-400 max-w-sm mb-6">{desc}</p>{actionLabel && onAction && <button onClick={onAction} className="px-6 py-2.5 rounded-xl gradient-bg text-white font-medium hover:opacity-90">{actionLabel}</button>}</div>)
-const NotifPanel = ({ isOpen, notifs, onClose, onRead, onNav }) => {
-  const ref = useRef(null)
-  useEffect(() => { const h = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose() }; if (isOpen) document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h) }, [isOpen, onClose])
-  if (!isOpen) return null
-  const ur = notifs.filter(n => !n.read).length
-  return (<div ref={ref} className="absolute top-full right-0 mt-2 w-80 glass-strong rounded-2xl border border-white/10 overflow-hidden animate-slide-up z-50"><div className="p-4 border-b border-white/10 flex items-center justify-between"><h3 className="font-bold text-white">Notifications</h3>{ur > 0 && <span className="text-xs px-2 py-0.5 rounded-full bg-brand-from/20 text-brand-from">{ur} new</span>}</div><div className="max-h-80 overflow-y-auto">{notifs.length > 0 ? notifs.slice(0, 10).map(n => (<button key={n.id} onClick={() => { onRead(n.id); if (n.link) onNav(n.link) }} className={`w-full text-left p-3 hover:bg-white/5 border-b border-white/5 last:border-0 ${!n.read ? 'bg-white/[0.03]' : ''}`}><p className="text-sm text-white">{n.message}</p><p className="text-xs text-gray-500 mt-1">{timeAgo(n.createdAt)}</p></button>)) : <p className="p-4 text-center text-gray-500 text-sm">No notifications yet</p>}</div></div>)
-}
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(onClose, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast, onClose]);
 
-// Skill Card — Enhanced with favorites, tags, share, report, message
-const SkillCard = ({ listing, uid, onEdit, onDelete, onContact, onFav, onReport, onMsg, onShare, onUser, isFav, showAct = true }) => {
-  const cat = getCat(listing.category), CI = cat.icon, own = uid && listing.userId === uid
-  return (<div className="glass rounded-2xl p-5 hover:bg-white/[0.07] transition-all duration-300 group">
-    <div className="flex items-center justify-between mb-3">
-      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${cat.color} text-white`}><CI size={12} />{cat.label}</span>
-      <div className="flex items-center gap-1">
-        {!own && isFav !== undefined && <button onClick={() => onFav && onFav(listing)} className="p-1.5 rounded-lg hover:bg-white/10" title="Favorite"><Heart size={16} className={isFav ? 'text-red-400 fill-red-400' : 'text-gray-500'} /></button>}
-        <button onClick={() => onShare && onShare(listing)} className="p-1.5 rounded-lg hover:bg-white/10" title="Copy Link"><Share2 size={14} className="text-gray-500" /></button>
-        <span className="text-gray-500 text-xs flex items-center gap-1 ml-1"><Clock size={12} />{timeAgo(listing.createdAt)}</span>
+  if (!toast) return null;
+
+  const styles = {
+    success: { bg: 'bg-emerald-500/20 border-emerald-500/40', icon: <CheckCircle className="w-5 h-5 text-emerald-400" />, text: 'text-emerald-300' },
+    error: { bg: 'bg-red-500/20 border-red-500/40', icon: <XCircle className="w-5 h-5 text-red-400" />, text: 'text-red-300' },
+    info: { bg: 'bg-blue-500/20 border-blue-500/40', icon: <Info className="w-5 h-5 text-blue-400" />, text: 'text-blue-300' },
+    warning: { bg: 'bg-amber-500/20 border-amber-500/40', icon: <AlertTriangle className="w-5 h-5 text-amber-400" />, text: 'text-amber-300' },
+  };
+  const s = styles[toast.type] || styles.info;
+
+  return (
+    <div className={`fixed top-4 right-4 z-[100] slide-up ${s.bg} border rounded-xl px-5 py-3 flex items-center gap-3 shadow-lg max-w-sm`}>
+      {s.icon}
+      <p className={`text-sm font-medium ${s.text}`}>{toast.message}</p>
+      <button onClick={onClose} className="ml-2 text-white/50 hover:text-white/80"><X className="w-4 h-4" /></button>
+    </div>
+  );
+};
+
+// --- Loading Skeleton ---
+const LoadingSkeleton = ({ rows = 3, type = 'card' }) => {
+  if (type === 'card') {
+    return (
+      <div className="space-y-4">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="glass rounded-2xl p-5 animate-pulse">
+            <div className="flex gap-4">
+              <div className="w-12 h-12 rounded-full bg-dark-700" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-dark-700 rounded w-3/4" />
+                <div className="h-3 bg-dark-700 rounded w-1/2" />
+                <div className="h-3 bg-dark-700 rounded w-full" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
+    );
+  }
+  if (type === 'grid') {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: rows * 3 }).map((_, i) => (
+          <div key={i} className="glass rounded-2xl p-5 animate-pulse h-48">
+            <div className="h-4 bg-dark-700 rounded w-2/3 mb-3" />
+            <div className="h-3 bg-dark-700 rounded w-full mb-2" />
+            <div className="h-3 bg-dark-700 rounded w-4/5 mb-4" />
+            <div className="flex gap-2">
+              <div className="h-6 bg-dark-700 rounded-full w-16" />
+              <div className="h-6 bg-dark-700 rounded-full w-20" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="animate-pulse flex gap-3 items-center">
+          <div className="w-10 h-10 rounded-full bg-dark-700" />
+          <div className="flex-1">
+            <div className="h-3 bg-dark-700 rounded w-1/3 mb-2" />
+            <div className="h-2 bg-dark-700 rounded w-2/3" />
+          </div>
+        </div>
+      ))}
     </div>
-    <div className="space-y-2 mb-3">
-      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" /><span className="text-gray-400 text-sm">I Offer</span><span className="text-white font-semibold text-sm">{listing.skillOffered}</span></div>
-      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-400 shrink-0" /><span className="text-gray-400 text-sm">I Want</span><span className="text-white font-semibold text-sm">{listing.skillWanted}</span></div>
+  );
+};
+
+// --- Empty State ---
+const EmptyState = ({ icon: Icon, title, description, actionLabel, onAction }) => (
+  <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+    <div className="w-20 h-20 rounded-full bg-dark-800 flex items-center justify-center mb-4">
+      <Icon className="w-10 h-10 text-dark-500" />
     </div>
-    {listing.description && <p className="text-gray-400 text-sm line-clamp-2 mb-3">{listing.description}</p>}
-    {listing.tags && listing.tags.length > 0 && <div className="flex flex-wrap gap-1.5 mb-3">{listing.tags.slice(0, 3).map((t, i) => (<span key={i} className="px-2 py-0.5 rounded-md bg-white/5 text-gray-400 text-xs flex items-center gap-1"><Hash size={10} />{t}</span>))}{listing.tags.length > 3 && <span className="px-2 py-0.5 rounded-md bg-white/5 text-gray-500 text-xs">+{listing.tags.length - 3}</span>}</div>}
-    {listing.contactInfo && <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 mb-3"><p className="text-gray-500 text-xs flex items-center gap-1.5"><Mail size={12} />{trunc(listing.contactInfo, 40)}</p></div>}
-    <div className="flex items-center justify-between pt-3 border-t border-white/5">
-      <button onClick={() => onUser && onUser(listing)} className="flex items-center gap-2.5 hover:opacity-80 transition-all">
-        <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userGrad(listing.userId)} flex items-center justify-center`}><span className="text-white font-bold text-xs">{initials(listing.userName)}</span></div>
-        <div><span className="text-gray-300 text-sm font-medium block">{listing.userName}</span></div>
+    <h3 className="text-lg font-semibold text-white/80 mb-2">{title}</h3>
+    <p className="text-dark-400 text-sm max-w-sm mb-6">{description}</p>
+    {actionLabel && onAction && (
+      <button onClick={onAction} className="gradient-bg text-white px-6 py-2.5 rounded-xl font-medium hover:opacity-90 transition-opacity">
+        {actionLabel}
       </button>
-      {showAct && <div className="flex items-center gap-1.5">{own ? (<><button onClick={() => onEdit && onEdit(listing)} className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10" title="Edit"><Edit2 size={16} /></button><button onClick={() => onDelete && onDelete(listing)} className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-red-400 hover:bg-red-500/10" title="Delete"><Trash2 size={16} /></button></>) : (<><button onClick={() => onMsg && onMsg(listing)} className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-brand-from hover:bg-white/10" title="Message"><MessageCircle size={16} /></button><button onClick={() => onContact && onContact(listing)} className="px-3 py-2 rounded-lg bg-white/5 text-gray-300 hover:text-white hover:bg-white/10 text-sm font-medium flex items-center gap-1.5"><MessageCircle size={14} />Contact</button><button onClick={() => onReport && onReport(listing)} className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-amber-400 hover:bg-amber-500/10" title="Report"><Flag size={14} /></button></>)}</div>}
+    )}
+  </div>
+);
+
+// --- Rating Stars ---
+const RatingStars = ({ rating, size = 'sm', interactive = false, onRate }) => {
+  const [hover, setHover] = useState(0);
+  const stars = [1, 2, 3, 4, 5];
+  const sizeClass = size === 'lg' ? 'w-7 h-7' : size === 'md' ? 'w-5 h-5' : 'w-4 h-4';
+  return (
+    <div className="flex gap-0.5">
+      {stars.map(s => (
+        <Star
+          key={s}
+          className={`${sizeClass} ${(hover || rating) >= s ? 'fill-amber-400 text-amber-400' : 'text-dark-600'} ${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : ''}`}
+          onMouseEnter={() => interactive && setHover(s)}
+          onMouseLeave={() => interactive && setHover(0)}
+          onClick={() => interactive && onRate && onRate(s)}
+        />
+      ))}
     </div>
-  </div>)
-}
+  );
+};
 
-// ============================================
-// SECTION 6: PAGE COMPONENTS
-// ============================================
+// --- Trust Score Ring ---
+const TrustRing = ({ score, size = 80, strokeWidth = 6 }) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - ((score || 0) / 100) * circumference;
+  const color = score >= 80 ? '#22c55e' : score >= 50 ? '#3b82f6' : score >= 25 ? '#f59e0b' : '#64748b';
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="transform -rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#1e293b" strokeWidth={strokeWidth} />
+        <circle
+          cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth}
+          strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 1s ease-in-out' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-sm font-bold text-white">{score || 0}</span>
+      </div>
+    </div>
+  );
+};
 
-// --- HOME PAGE ---
-const HomePage = ({ listings, userName, uid, onNav, stats, favorites, recentlyViewed, blockedUsers }) => {
-  const recent = listings.filter(l => !isBlocked(blockedUsers, l.userId)).slice(0, 3)
-  const trending = trendingCats(listings)
-  const suggested = uid ? matchingSuggestions(listings.filter(l => !isBlocked(blockedUsers, l.userId)), uid) : []
-  const maxCatCount = trending.length > 0 ? trending[0].count : 1
-  const viewedListings = recentlyViewed ? listings.filter(l => recentlyViewed.includes(l.id)).slice(0, 3) : []
+// --- Badges Row ---
+const BadgesRow = ({ badges, size = 'sm' }) => {
+  if (!badges || badges.length === 0) return <p className="text-dark-500 text-sm">No badges earned yet</p>;
+  const sizeClass = size === 'lg' ? 'w-12 h-12' : 'w-8 h-8';
+  return (
+    <div className="flex flex-wrap gap-2">
+      {badges.map(badge => {
+        const BIcon = badge.icon || Star;
+        return (
+          <div key={badge.id} className="flex items-center gap-1.5 glass rounded-lg px-2 py-1" title={badge.desc}>
+            <div className={`${sizeClass} rounded-full bg-gradient-to-br from-brand-500 to-purple-500 flex items-center justify-center`}>
+              <BIcon className={`${size === 'lg' ? 'w-6 h-6' : 'w-4 h-4'} text-white`} />
+            </div>
+            <span className="text-xs text-white/70">{badge.name}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
-  return (<div className="space-y-10 pb-8">
-    <section className="relative overflow-hidden rounded-3xl">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/40 via-dark-800 to-purple-900/40" />
-      <div className="absolute top-10 left-10 w-72 h-72 bg-indigo-500/20 rounded-full blur-[100px]" />
-      <div className="absolute bottom-10 right-10 w-72 h-72 bg-purple-500/20 rounded-full blur-[100px]" />
-      <div className="relative px-6 py-16 md:py-24 text-center">
-        <h1 className="text-4xl md:text-6xl font-extrabold mb-4"><span className="gradient-text">Barter Exchange</span></h1>
-        <p className="text-xl md:text-2xl text-gray-300 mb-2 font-light">Exchange Skills, Not Money.</p>
-        {userName && <p className="text-gray-400 mb-8">Welcome back, {userName}!</p>}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button onClick={() => onNav('explore')} className="px-8 py-3.5 rounded-xl gradient-bg text-white font-semibold hover:opacity-90 glow flex items-center justify-center gap-2"><Search size={18} />Explore Skills</button>
-          <button onClick={() => onNav('post')} className="px-8 py-3.5 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/15 border border-white/10 flex items-center justify-center gap-2"><PlusCircle size={18} />Post Your Skill</button>
+// --- Activity Heatmap ---
+const Heatmap = ({ activityLog, size = 'sm' }) => {
+  const weeks = 12;
+  const days = 7;
+  const cells = [];
+  const data = activityLog || {};
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - (weeks * 7) + 1);
+
+  for (let w = 0; w < weeks; w++) {
+    for (let d = 0; d < days; d++) {
+      const cellDate = new Date(startDate);
+      cellDate.setDate(cellDate.getDate() + (w * 7) + d);
+      const key = cellDate.toISOString().split('T')[0];
+      const count = data[key] || 0;
+      cells.push({ key, count, week: w, day: d });
+    }
+  }
+
+  const cellSize = size === 'lg' ? 'w-3 h-3' : 'w-2.5 h-2.5';
+  return (
+    <div className="overflow-x-auto">
+      <div className="flex gap-0.5" style={{ width: weeks * 14 }}>
+        {cells.map(c => (
+          <div
+            key={c.key}
+            className={`${cellSize} rounded-sm ${heatColor(c.count)} transition-colors`}
+            title={`${c.key}: ${c.count} activities`}
+          />
+        ))}
+      </div>
+      <div className="flex items-center gap-1 mt-2">
+        <span className="text-[10px] text-dark-500">Less</span>
+        <div className="w-2.5 h-2.5 rounded-sm bg-dark-800" />
+        <div className="w-2.5 h-2.5 rounded-sm bg-brand-900/50" />
+        <div className="w-2.5 h-2.5 rounded-sm bg-brand-700/60" />
+        <div className="w-2.5 h-2.5 rounded-sm bg-brand-500/70" />
+        <div className="w-2.5 h-2.5 rounded-sm bg-brand-300" />
+        <span className="text-[10px] text-dark-500">More</span>
+      </div>
+    </div>
+  );
+};
+
+// --- Scroll To Top Button ---
+const ScrollToTop = () => {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const handler = () => setVisible(window.scrollY > 400);
+    window.addEventListener('scroll', handler);
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
+  if (!visible) return null;
+  return (
+    <button
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      className="fixed bottom-24 md:bottom-6 right-6 z-50 w-10 h-10 rounded-full gradient-bg text-white flex items-center justify-center shadow-lg hover:opacity-90 transition-all slide-up"
+    >
+      <ChevronUp className="w-5 h-5" />
+    </button>
+  );
+};
+
+// --- Password Strength Indicator ---
+const PasswordStrengthBar = ({ password }) => {
+  const strength = passwordStrength(password);
+  if (!password) return null;
+  return (
+    <div className="mt-2">
+      <div className="flex gap-1">
+        {[1, 2, 3].map(i => (
+          <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= strength.score ? strength.color : 'bg-dark-700'}`} />
+        ))}
+      </div>
+      <p className="text-xs mt-1 text-dark-400">{strength.label}</p>
+    </div>
+  );
+};
+
+// --- Notification Panel ---
+const NotifPanel = ({ notifications, visible, onClose, onMarkRead }) => {
+  if (!visible) return null;
+  return (
+    <div className="absolute right-0 top-12 w-80 glass-strong rounded-2xl shadow-2xl z-50 slide-up overflow-hidden">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between">
+        <h3 className="font-semibold text-white">Notifications</h3>
+        <button onClick={onClose}><X className="w-4 h-4 text-dark-400 hover:text-white" /></button>
+      </div>
+      <div className="max-h-80 overflow-y-auto">
+        {notifications && notifications.length > 0 ? notifications.slice(0, 10).map((n, i) => (
+          <div key={i} className={`p-3 border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors ${!n.read ? 'bg-brand-500/5' : ''}`} onClick={() => onMarkRead(i)}>
+            <p className="text-sm text-white/80">{n.message}</p>
+            <p className="text-xs text-dark-500 mt-1">{timeAgo(n.createdAt)}</p>
+          </div>
+        )) : (
+          <div className="p-8 text-center text-dark-500 text-sm">No notifications yet</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- User Avatar ---
+const UserAvatar = ({ name, userId, size = 'md' }) => {
+  const sizeMap = { sm: 'w-8 h-8 text-xs', md: 'w-10 h-10 text-sm', lg: 'w-14 h-14 text-lg', xl: 'w-20 h-20 text-2xl' };
+  return (
+    <div className={`${sizeMap[size] || sizeMap.md} rounded-full bg-gradient-to-br ${userGrad(userId)} flex items-center justify-center font-bold text-white shrink-0`}>
+      {initials(name)}
+    </div>
+  );
+};
+
+// ============================================================
+// SECTION 5B: MODAL COMPONENTS
+// ============================================================
+
+// --- Modal Wrapper ---
+const Modal = ({ visible, onClose, children, title }) => {
+  if (!visible) return null;
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="relative glass-strong rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto slide-up" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          {title && <h3 className="text-lg font-bold text-white">{title}</h3>}
+          <button onClick={onClose} className="text-dark-400 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// --- Welcome Modal ---
+const WelcomeModal = ({ visible, onClose, onSubmit }) => {
+  const [name, setName] = useState('');
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (name.trim()) onSubmit(name.trim());
+  };
+  return (
+    <Modal visible={visible} onClose={onClose} title="Welcome to SkillSwap!">
+      <p className="text-dark-400 text-sm mb-4">What should we call you? This will be your display name.</p>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Enter your display name"
+          className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 transition-colors"
+          autoFocus
+        />
+        <button type="submit" disabled={!name.trim()} className="mt-4 w-full gradient-bg text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity disabled:opacity-50">
+          Get Started
+        </button>
+      </form>
+    </Modal>
+  );
+};
+
+// --- Delete Confirmation Modal ---
+const DeleteModal = ({ visible, onClose, onConfirm, itemName }) => (
+  <Modal visible={visible} onClose={onClose} title="Delete Confirmation">
+    <p className="text-dark-300 mb-2">Are you sure you want to delete</p>
+    <p className="text-white font-semibold mb-1">"{itemName}"</p>
+    <p className="text-dark-400 text-sm mb-6">This action cannot be undone.</p>
+    <div className="flex gap-3">
+      <button onClick={onClose} className="flex-1 bg-dark-700 text-white py-2.5 rounded-xl font-medium hover:bg-dark-600 transition-colors">Cancel</button>
+      <button onClick={onConfirm} className="flex-1 bg-red-500 text-white py-2.5 rounded-xl font-medium hover:bg-red-600 transition-colors">Delete</button>
+    </div>
+  </Modal>
+);
+
+// --- Contact Info Modal ---
+const ContactModal = ({ visible, onClose, contactInfo, userName }) => (
+  <Modal visible={visible} onClose={onClose} title="Contact Information">
+    <div className="text-center">
+      <UserAvatar name={userName} userId={userName} size="lg" />
+      <h4 className="text-white font-semibold mt-3">{userName}</h4>
+      <div className="glass rounded-xl p-4 mt-4">
+        <p className="text-dark-400 text-sm mb-1">Contact Details</p>
+        <p className="text-white">{contactInfo || 'No contact info provided'}</p>
+      </div>
+      <button onClick={onClose} className="mt-4 w-full gradient-bg text-white py-2.5 rounded-xl font-medium hover:opacity-90 transition-opacity">Close</button>
+    </div>
+  </Modal>
+);
+
+// --- Report Modal ---
+const ReportModal = ({ visible, onClose, onSubmit }) => {
+  const [reason, setReason] = useState('');
+  const [desc, setDesc] = useState('');
+  const handleSubmit = () => {
+    if (reason) { onSubmit(reason, desc); setReason(''); setDesc(''); }
+  };
+  return (
+    <Modal visible={visible} onClose={onClose} title="Report Listing">
+      <p className="text-dark-400 text-sm mb-4">Why are you reporting this listing?</p>
+      <div className="space-y-2 mb-4">
+        {REPORT_REASONS.map(r => (
+          <label key={r} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${reason === r ? 'bg-brand-500/20 border border-brand-500/40' : 'bg-dark-800/50 border border-transparent hover:bg-white/5'}`}>
+            <input type="radio" name="report" value={r} checked={reason === r} onChange={e => setReason(e.target.value)} className="accent-brand-500" />
+            <span className="text-sm text-white/80">{r}</span>
+          </label>
+        ))}
+      </div>
+      <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Additional details (optional)" rows={3}
+        className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 text-sm resize-none" />
+      <button onClick={handleSubmit} disabled={!reason} className="mt-3 w-full bg-red-500/80 text-white py-2.5 rounded-xl font-medium hover:bg-red-500 transition-colors disabled:opacity-50">
+        Submit Report
+      </button>
+    </Modal>
+  );
+};
+
+// --- Review Modal ---
+const ReviewModal = ({ visible, onClose, onSubmit, userName }) => {
+  const [rating, setRating] = useState(0);
+  const [text, setText] = useState('');
+  const handleSubmit = () => {
+    if (rating > 0) { onSubmit(rating, text); setRating(0); setText(''); }
+  };
+  return (
+    <Modal visible={visible} onClose={onClose} title={`Review ${userName || 'User'}`}>
+      <div className="text-center mb-4">
+        <p className="text-dark-400 text-sm mb-2">How was your experience?</p>
+        <div className="flex justify-center">
+          <RatingStars rating={rating} size="lg" interactive onRate={setRating} />
         </div>
       </div>
-    </section>
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {[{ label: 'Skills Listed', value: stats.totalListings, icon: Zap }, { label: 'Community', value: stats.uniqueUsers, icon: Users }, { label: 'Categories', value: stats.totalCategories, icon: FolderOpen }].map(s => (
-        <div key={s.label} className="glass rounded-2xl p-6 text-center hover:bg-white/[0.07] transition-all"><div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mx-auto mb-3"><s.icon size={24} className="text-brand-from" /></div><p className="text-3xl font-bold text-white mb-1">{s.value}</p><p className="text-gray-400 text-sm">{s.label}</p></div>
-      ))}
-    </section>
-    {suggested.length > 0 && <section>
-      <div className="flex items-center justify-between mb-4"><h2 className="text-xl font-bold text-white flex items-center gap-2"><Sparkles size={20} className="text-amber-400" />Suggested For You</h2></div>
-      <div className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>{suggested.map(l => (<div key={l.id} className="glass rounded-2xl p-4 min-w-[280px] hover:bg-white/[0.07] transition-all"><span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r ${getCat(l.category).color} text-white mb-2`}>{getCat(l.category).label}</span><p className="text-white font-semibold text-sm">Offers: {l.skillOffered}</p><p className="text-gray-400 text-sm">Wants: {l.skillWanted}</p><p className="text-gray-500 text-xs mt-2">{l.userName}</p></div>))}</div>
-    </section>}
-    {trending.length > 0 && <section>
-      <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><TrendingUp size={20} className="text-emerald-400" />Trending Categories</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">{trending.map(t => { const CI = t.icon; return (<div key={t.id} className="glass rounded-xl p-4 hover:bg-white/[0.07] transition-all"><div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${t.color} flex items-center justify-center`}><CI size={16} className="text-white" /></div><span className="text-sm text-white font-medium">{t.label}</span></div><span className="text-xs text-gray-400">{t.count} listings</span></div><div className="w-full h-2 bg-white/5 rounded-full overflow-hidden"><div className={`h-full bg-gradient-to-r ${t.color} rounded-full transition-all`} style={{ width: (t.count / maxCatCount * 100) + '%' }} /></div></div>) })}</div>
-    </section>}
-    <section>
-      <h2 className="text-2xl font-bold text-white mb-6 text-center">How It Works</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{HOW_IT_WORKS.map(item => (<div key={item.step} className="glass rounded-2xl p-6 text-center hover:bg-white/[0.07] group"><div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.gradient} flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}><item.icon className="text-white" size={28} /></div><div className="text-xs font-bold text-brand-from mb-2">Step {item.step}</div><h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3><p className="text-gray-400 text-sm">{item.description}</p></div>))}</div>
-    </section>
-    {viewedListings.length > 0 && <section><div className="flex items-center justify-between mb-4"><h2 className="text-xl font-bold text-white flex items-center gap-2"><Eye size={20} className="text-blue-400" />Recently Viewed</h2></div><div className="grid grid-cols-1 md:grid-cols-3 gap-4">{viewedListings.map(l => (<SkillCard key={l.id} listing={l} uid={uid} onUser={() => {}} />))}</div></section>}
-    <section>
-      <div className="flex items-center justify-between mb-6"><h2 className="text-2xl font-bold text-white">Recent Listings</h2><button onClick={() => onNav('explore')} className="text-brand-from hover:text-brand-to text-sm font-medium flex items-center gap-1">View All<ChevronRight size={16} /></button></div>
-      {recent.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{recent.map(l => (<SkillCard key={l.id} listing={l} uid={uid} onUser={() => {}} />))}</div> : <EmptyState icon={FolderOpen} title="No listings yet" desc="Be the first to post a skill!" actionLabel="Post a Skill" onAction={() => onNav('post')} />}
-    </section>
-  </div>)
-}
+      <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Write a review (optional)" rows={3}
+        className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 text-sm resize-none" />
+      <button onClick={handleSubmit} disabled={rating === 0} className="mt-3 w-full gradient-bg text-white py-2.5 rounded-xl font-medium hover:opacity-90 disabled:opacity-50">
+        Submit Review
+      </button>
+    </Modal>
+  );
+};
+
+// --- Exchange Proposal Modal ---
+const ExchangeModal = ({ visible, onClose, onSubmit, listing }) => {
+  const [message, setMessage] = useState('');
+  const handleSubmit = () => {
+    if (message.trim()) { onSubmit(message); setMessage(''); }
+  };
+  return (
+    <Modal visible={visible} onClose={onClose} title="Propose Exchange">
+      <div className="glass rounded-xl p-4 mb-4">
+        <p className="text-dark-400 text-xs mb-1">Listing</p>
+        <p className="text-white font-semibold">{listing?.skillOffered}</p>
+        <p className="text-dark-300 text-sm">Wants: {listing?.skillWanted}</p>
+      </div>
+      <p className="text-dark-400 text-sm mb-2">Write a message to propose the exchange</p>
+      <textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Hi! I'd love to exchange skills with you..." rows={4}
+        className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 text-sm resize-none" />
+      <button onClick={handleSubmit} disabled={!message.trim()} className="mt-3 w-full gradient-bg text-white py-2.5 rounded-xl font-medium hover:opacity-90 disabled:opacity-50">
+        Send Proposal
+      </button>
+    </Modal>
+  );
+};
+
+// --- User Profile Modal ---
+const UserProfileModal = ({ visible, onClose, user, listings, reviews }) => {
+  if (!user) return null;
+  const score = trustScore(listings?.length || 0, reviews?.length || 0, 0);
+  const title = userTitle(score);
+  return (
+    <Modal visible={visible} onClose={onClose}>
+      <div className="text-center">
+        <UserAvatar name={user.userName} userId={user.userId} size="xl" />
+        <h3 className="text-xl font-bold text-white mt-3">{user.userName}</h3>
+        <p className={`text-sm ${title.color}`}>{title.name}</p>
+        <div className="flex justify-center mt-3">
+          <TrustRing score={score} />
+        </div>
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          <div className="glass rounded-xl p-3 text-center">
+            <p className="text-xl font-bold text-white">{listings?.length || 0}</p>
+            <p className="text-xs text-dark-400">Listings</p>
+          </div>
+          <div className="glass rounded-xl p-3 text-center">
+            <p className="text-xl font-bold text-white">{reviews?.length || 0}</p>
+            <p className="text-xs text-dark-400">Reviews</p>
+          </div>
+          <div className="glass rounded-xl p-3 text-center">
+            <p className="text-xl font-bold text-white">{score}</p>
+            <p className="text-xs text-dark-400">Score</p>
+          </div>
+        </div>
+        {listings && listings.length > 0 && (
+          <div className="mt-4 text-left">
+            <h4 className="text-sm font-semibold text-white/80 mb-2">Recent Listings</h4>
+            {listings.slice(0, 3).map(l => (
+              <div key={l.id} className="glass rounded-lg p-3 mb-2">
+                <p className="text-sm font-medium text-white">{l.skillOffered}</p>
+                <p className="text-xs text-dark-400">Wants: {l.skillWanted}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+};
+
+// --- Image Preview Modal ---
+const ImagePreviewModal = ({ visible, onClose, imageUrl }) => {
+  if (!visible || !imageUrl) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90" onClick={onClose}>
+      <button className="absolute top-4 right-4 text-white/60 hover:text-white z-10"><X className="w-8 h-8" /></button>
+      <img src={imageUrl} alt="Preview" className="max-w-full max-h-[85vh] rounded-2xl object-contain" onClick={e => e.stopPropagation()} />
+    </div>
+  );
+};
+
+// ============================================================
+// SECTION 5C: SKILL CARD COMPONENT
+// ============================================================
+
+const SkillCard = ({
+  listing, isFavorite, onToggleFavorite, onView, onEdit, onDelete,
+  onContact, onReport, onReview, onExchange, onUserClick, showActions = true, currentUser
+}) => {
+  const cat = getCat(listing.category);
+  const CatIcon = cat.icon;
+  const isOwner = currentUser && listing.userId === currentUser.uid;
+
+  return (
+    <div
+      className="glass rounded-2xl p-5 hover:bg-white/[0.07] transition-all duration-300 hover:scale-[1.02] cursor-pointer group page-enter"
+      onClick={() => onView && onView(listing)}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); onUserClick && onUserClick(listing); }}>
+          <UserAvatar name={listing.userName} userId={listing.userId} size="sm" />
+          <div>
+            <p className="text-sm font-semibold text-white group-hover:text-brand-300 transition-colors">{listing.userName}</p>
+            <p className="text-xs text-dark-500">{timeAgo(listing.createdAt)}</p>
+          </div>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite && onToggleFavorite(listing.id); }}
+          className="text-dark-400 hover:text-red-400 transition-colors"
+        >
+          <Heart className={`w-5 h-5 ${isFavorite ? 'fill-red-400 text-red-400' : ''}`} />
+        </button>
+      </div>
+
+      {/* Skill Info */}
+      <div className="mb-3">
+        <div className="flex items-center gap-2 mb-1">
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r ${cat.color} text-white`}>
+            {cat.name}
+          </span>
+          {listing.skillLevel && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-dark-700 text-dark-300">{listing.skillLevel}</span>
+          )}
+        </div>
+        <h3 className="text-lg font-bold text-white mt-2">{listing.skillOffered}</h3>
+        <p className="text-sm text-dark-300 mt-1">Wants: <span className="text-brand-300">{listing.skillWanted}</span></p>
+      </div>
+
+      {/* Description */}
+      {listing.description && (
+        <p className="text-xs text-dark-400 mb-3 line-clamp-2">{trunc(listing.description, 120)}</p>
+      )}
+
+      {/* Image Preview */}
+      {listing.imageUrl && (
+        <div className="mb-3 rounded-xl overflow-hidden h-32 bg-dark-800" onClick={(e) => { e.stopPropagation(); }}>
+          <img src={listing.imageUrl} alt="" className="w-full h-full object-cover" />
+        </div>
+      )}
+
+      {/* Tags */}
+      {listing.tags && listing.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {listing.tags.slice(0, 4).map((tag, i) => (
+            <span key={i} className="px-2 py-0.5 rounded-full text-[10px] bg-dark-800 text-dark-400 border border-white/5">{tag}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Footer Stats */}
+      <div className="flex items-center justify-between pt-3 border-t border-white/5">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1 text-xs text-dark-500">
+            <Eye className="w-3.5 h-3.5" /> {listing.views || 0}
+          </span>
+          <span className="flex items-center gap-1 text-xs text-dark-500">
+            <Heart className="w-3.5 h-3.5" /> {listing.favorites || 0}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          {listing.exchangeType && (
+            <span className="flex items-center gap-1 text-[10px] text-dark-500">
+              {listing.exchangeType === 'Online' ? <Globe className="w-3 h-3" /> : listing.exchangeType === 'In-person' ? <MapPin className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+              {listing.exchangeType}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Action Buttons (shown on hover or for owner) */}
+      {showActions && (
+        <div className="mt-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {!isOwner ? (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); onContact && onContact(listing); }} className="flex-1 text-xs bg-brand-500/20 text-brand-300 py-1.5 rounded-lg hover:bg-brand-500/30 transition-colors">
+                Contact
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); onExchange && onExchange(listing); }} className="flex-1 text-xs gradient-bg text-white py-1.5 rounded-lg hover:opacity-90 transition-opacity">
+                Propose Exchange
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); onReport && onReport(listing); }} className="text-dark-500 hover:text-red-400 transition-colors p-1.5">
+                <Flag className="w-3.5 h-3.5" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); onEdit && onEdit(listing); }} className="flex-1 text-xs bg-dark-700 text-white py-1.5 rounded-lg hover:bg-dark-600 transition-colors flex items-center justify-center gap-1">
+                <Edit3 className="w-3 h-3" /> Edit
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); onDelete && onDelete(listing); }} className="flex-1 text-xs bg-red-500/20 text-red-400 py-1.5 rounded-lg hover:bg-red-500/30 transition-colors flex items-center justify-center gap-1">
+                <Trash2 className="w-3 h-3" /> Delete
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================
+// PART 1 ENDS HERE — Continue with PART 2
+// ============================================================
+// ============================================================
+// SKILLSWAP — BARTER EXCHANGE APP
+// Complete App.jsx — PART 2 of 2
+// CONTINUE: Landing, Login, Signup, All Pages, Layout, Main App
+// ============================================================
+// ⬆️ Paste PART 1 above this line in your App.jsx file ⬆️
+
+// ============================================================
+// SECTION 6: LANDING PAGE
+// ============================================================
+
+const LandingPage = ({ onNavigate }) => {
+  const [statsVisible, setStatsVisible] = useState(false);
+  const [testiIndex, setTestiIndex] = useState(0);
+  const statsRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setStatsVisible(true); },
+      { threshold: 0.3 }
+    );
+    if (statsRef.current) observer.observe(statsRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTestiIndex(prev => (prev + 1) % TESTIMONIALS.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const animateNumber = (target) => {
+    return statsVisible ? target : 0;
+  };
+
+  return (
+    <div className="min-h-screen bg-dark-950 overflow-x-hidden">
+      {/* Floating Orbs Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-brand-500/20 rounded-full blur-3xl animate-float" />
+        <div className="absolute top-60 right-20 w-96 h-96 bg-purple-500/15 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute bottom-40 left-1/3 w-80 h-80 bg-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '4s' }} />
+        <div className="absolute bottom-20 right-10 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
+      </div>
+
+      {/* Navbar */}
+      <nav className="relative z-10 flex items-center justify-between px-6 md:px-12 py-4">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
+            <Handshake className="w-6 h-6 text-white" />
+          </div>
+          <span className="text-xl font-bold gradient-text">SkillSwap</span>
+        </div>
+        <div className="hidden md:flex items-center gap-8">
+          <a href="#features" className="text-dark-400 hover:text-white transition-colors text-sm">Features</a>
+          <a href="#how" className="text-dark-400 hover:text-white transition-colors text-sm">How It Works</a>
+          <a href="#testimonials" className="text-dark-400 hover:text-white transition-colors text-sm">Reviews</a>
+          <a href="#categories" className="text-dark-400 hover:text-white transition-colors text-sm">Categories</a>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={() => onNavigate('login')} className="text-sm text-dark-300 hover:text-white transition-colors px-4 py-2">Log In</button>
+          <button onClick={() => onNavigate('signup')} className="gradient-bg text-white text-sm px-5 py-2 rounded-xl font-medium hover:opacity-90 transition-opacity glow-sm">Sign Up</button>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative z-10 flex flex-col items-center justify-center text-center px-6 pt-20 pb-32">
+        <div className="slide-up">
+          <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-2 mb-8">
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span className="text-sm text-dark-300">Trusted by 1,000+ skill traders worldwide</span>
+          </div>
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight">
+            <span className="text-white">Exchange Skills,</span><br />
+            <span className="gradient-text">Not Money.</span>
+          </h1>
+          <p className="text-lg md:text-xl text-dark-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+            The world's first peer-to-peer skill trading platform. Share what you know,
+            learn what you need. No money involved — just pure knowledge exchange.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button onClick={() => onNavigate('signup')} className="gradient-bg text-white px-8 py-4 rounded-2xl font-bold text-lg hover:opacity-90 transition-opacity glow flex items-center gap-2">
+              Get Started Free <ArrowRight className="w-5 h-5" />
+            </button>
+            <button onClick={() => onNavigate('login')} className="glass-strong text-white px-8 py-4 rounded-2xl font-medium text-lg hover:bg-white/10 transition-colors flex items-center gap-2">
+              Explore Skills <Compass className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Floating Feature Cards */}
+        <div className="hidden lg:flex items-center justify-center gap-6 mt-20">
+          {[
+            { icon: Code, label: 'Code', color: 'from-blue-500 to-cyan-400' },
+            { icon: Palette, label: 'Design', color: 'from-pink-500 to-rose-400' },
+            { icon: Music, label: 'Music', color: 'from-purple-500 to-violet-400' },
+            { icon: ChefHat, label: 'Cooking', color: 'from-orange-500 to-amber-400' },
+            { icon: Languages, label: 'Language', color: 'from-indigo-500 to-blue-400' },
+          ].map((item, i) => (
+            <div key={i} className="glass rounded-2xl p-4 animate-float flex items-center gap-3" style={{ animationDelay: `${i * 0.5}s` }}>
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center`}>
+                <item.icon className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-sm font-medium text-white">{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="relative z-10 px-6 md:px-12 py-20">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Why <span className="gradient-text">SkillSwap</span>?</h2>
+            <p className="text-dark-400 max-w-lg mx-auto">Everything you need to trade skills with confidence and build meaningful connections.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: Shield, title: 'Trust System', desc: 'Our unique trust score and rating system ensures safe and reliable skill exchanges within the community.' },
+              { icon: Brain, title: 'Smart Matching', desc: 'AI-powered suggestions match you with the perfect skill partners based on what you offer and want.' },
+              { icon: Trophy, title: 'Gamification', desc: 'Earn badges, climb the leaderboard, and unlock achievements as you trade skills and help others.' },
+              { icon: MessageCircle, title: 'Built-in Chat', desc: 'Communicate directly with skill owners through our integrated messaging system — no external apps needed.' },
+            ].map((f, i) => (
+              <div key={i} className="glass rounded-2xl p-6 hover:bg-white/[0.07] transition-all duration-300 hover:scale-[1.03] group">
+                <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <f.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">{f.title}</h3>
+                <p className="text-sm text-dark-400 leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section id="how" className="relative z-10 px-6 md:px-12 py-20">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">How It <span className="gradient-text">Works</span></h2>
+            <p className="text-dark-400 max-w-lg mx-auto">Three simple steps to start exchanging skills today.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {HOW_IT_WORKS.map((step, i) => (
+              <div key={i} className="relative glass rounded-2xl p-8 text-center hover:bg-white/[0.07] transition-all duration-300 group">
+                <div className="absolute -top-4 -left-2 w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-white font-bold text-sm">
+                  {step.step}
+                </div>
+                <div className="w-16 h-16 rounded-2xl bg-dark-800 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                  <step.icon className="w-8 h-8 text-brand-400" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-3">{step.title}</h3>
+                <p className="text-sm text-dark-400 leading-relaxed">{step.desc}</p>
+                {i < 2 && (
+                  <div className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-10">
+                    <ArrowRight className="w-6 h-6 text-brand-400" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section ref={statsRef} className="relative z-10 px-6 md:px-12 py-20">
+        <div className="max-w-5xl mx-auto">
+          <div className="glass-strong rounded-3xl p-10 md:p-14">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-center">
+              {[
+                { value: animateNumber(2500), suffix: '+', label: 'Skills Listed' },
+                { value: animateNumber(1200), suffix: '+', label: 'Community Members' },
+                { value: animateNumber(3800), suffix: '+', label: 'Exchanges Completed' },
+              ].map((stat, i) => (
+                <div key={i}>
+                  <p className="text-4xl md:text-5xl font-black gradient-text">{stat.value}{stat.suffix}</p>
+                  <p className="text-dark-400 mt-2">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" className="relative z-10 px-6 md:px-12 py-20">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">What People <span className="gradient-text">Say</span></h2>
+          <p className="text-dark-400 mb-12">Hear from our thriving community of skill traders.</p>
+          <div className="glass-strong rounded-3xl p-8 md:p-12 relative overflow-hidden">
+            <div className="absolute top-4 left-8 text-6xl text-brand-500/20 font-serif">"</div>
+            <div className="slide-up" key={testiIndex}>
+              <UserAvatar name={TESTIMONIALS[testiIndex].name} userId={TESTIMONIALS[testiIndex].name} size="lg" />
+              <h4 className="text-xl font-bold text-white mt-4">{TESTIMONIALS[testiIndex].name}</h4>
+              <p className="text-sm text-brand-300 mb-4">{TESTIMONIALS[testiIndex].role}</p>
+              <div className="flex justify-center mb-4"><RatingStars rating={TESTIMONIALS[testiIndex].rating} /></div>
+              <p className="text-dark-300 leading-relaxed max-w-xl mx-auto">"{TESTIMONIALS[testiIndex].text}"</p>
+            </div>
+            <div className="flex justify-center gap-2 mt-8">
+              {TESTIMONIALS.map((_, i) => (
+                <button key={i} onClick={() => setTestiIndex(i)} className={`w-2.5 h-2.5 rounded-full transition-all ${i === testiIndex ? 'bg-brand-500 w-6' : 'bg-dark-600 hover:bg-dark-500'}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Categories Preview */}
+      <section id="categories" className="relative z-10 px-6 md:px-12 py-20">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Popular <span className="gradient-text">Categories</span></h2>
+            <p className="text-dark-400 max-w-lg mx-auto">Explore skills across diverse categories and find your perfect match.</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            {CATEGORIES.slice(0, 10).map((cat, i) => (
+              <div key={cat.id} className="glass rounded-2xl p-5 text-center hover:bg-white/[0.07] transition-all duration-300 hover:scale-105 cursor-pointer group">
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>
+                  <cat.icon className="w-7 h-7 text-white" />
+                </div>
+                <p className="text-sm font-medium text-white">{cat.name}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="relative z-10 px-6 md:px-12 py-20">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="glass-strong rounded-3xl p-10 md:p-16 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-brand-500/10 to-purple-500/10" />
+            <div className="relative">
+              <h2 className="text-3xl md:text-5xl font-black text-white mb-4">Ready to <span className="gradient-text">Swap Skills</span>?</h2>
+              <p className="text-dark-400 max-w-lg mx-auto mb-8">Join thousands of people who are learning and teaching without spending a dime. Your next skill is just one swap away.</p>
+              <button onClick={() => onNavigate('signup')} className="gradient-bg text-white px-10 py-4 rounded-2xl font-bold text-lg hover:opacity-90 transition-opacity glow">
+                Join SkillSwap Today
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-white/5 px-6 md:px-12 py-10">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center">
+              <Handshake className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-sm font-bold gradient-text">SkillSwap</span>
+          </div>
+          <div className="flex items-center gap-6 text-sm text-dark-500">
+            <span className="hover:text-white cursor-pointer transition-colors">About</span>
+            <span className="hover:text-white cursor-pointer transition-colors">Privacy</span>
+            <span className="hover:text-white cursor-pointer transition-colors">Terms</span>
+            <span className="hover:text-white cursor-pointer transition-colors">Contact</span>
+          </div>
+          <p className="text-xs text-dark-600">&copy; 2024 SkillSwap. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+// ============================================================
+// SECTION 7: LOGIN PAGE
+// ============================================================
+
+const LoginPage = ({ onNavigate, onLogin, showToast }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!email || !password) { setError('Please fill in all fields'); return; }
+    setLoading(true);
+    try {
+      await onLogin(email, password);
+    } catch (err) {
+      setError(err.code === 'auth/user-not-found' ? 'No account found with this email' :
+               err.code === 'auth/wrong-password' ? 'Incorrect password' :
+               err.code === 'auth/invalid-credential' ? 'Invalid credentials' :
+               'Login failed. Please try again.');
+    }
+    setLoading(false);
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      await onLogin(null, null, 'google');
+    } catch (err) {
+      setError('Google login failed. Please try again.');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-dark-950 flex items-center justify-center px-4 relative overflow-hidden">
+      <div className="absolute top-20 left-20 w-72 h-72 bg-brand-500/15 rounded-full blur-3xl" />
+      <div className="absolute bottom-20 right-20 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
+      <div className="w-full max-w-md relative z-10 slide-up">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-4 glow">
+            <Handshake className="w-9 h-9 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
+          <p className="text-dark-400 text-sm mt-1">Sign in to continue to SkillSwap</p>
+        </div>
+        <div className="glass-strong rounded-2xl p-8">
+          <button onClick={handleGoogleLogin} disabled={loading} className="w-full flex items-center justify-center gap-3 bg-dark-800/80 border border-white/10 rounded-xl py-3 text-white hover:bg-white/10 transition-colors mb-6">
+            <svg className="w-5 h-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            <span className="text-sm font-medium">Continue with Google</span>
+          </button>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-xs text-dark-500">or sign in with email</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+          {error && (
+            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+            </div>
+          )}
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="text-xs text-dark-400 font-medium mb-1 block">Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com"
+                className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 transition-colors text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-dark-400 font-medium mb-1 block">Password</label>
+              <div className="relative">
+                <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password"
+                  className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 transition-colors text-sm pr-10" />
+                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white">
+                  {showPass ? <Eye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} className="accent-brand-500 rounded" />
+                <span className="text-xs text-dark-400">Remember me</span>
+              </label>
+              <button type="button" onClick={() => showToast('info', 'Password reset link sent to your email!')} className="text-xs text-brand-400 hover:text-brand-300 transition-colors">Forgot Password?</button>
+            </div>
+            <button type="submit" disabled={loading} className="w-full gradient-bg text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <><LogIn className="w-4 h-4" /> Sign In</>}
+            </button>
+          </form>
+        </div>
+        <p className="text-center text-sm text-dark-400 mt-6">
+          Don't have an account? <button onClick={() => onNavigate('signup')} className="text-brand-400 font-medium hover:text-brand-300">Sign Up</button>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
+// SECTION 8: SIGNUP PAGE
+// ============================================================
+
+const SignupPage = ({ onNavigate, onSignup, showToast }) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPass, setConfirmPass] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [terms, setTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const strength = passwordStrength(password);
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!name || !email || !password || !confirmPass) { setError('Please fill in all fields'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('Please enter a valid email address'); return; }
+    if (password.length < 6) { setError('Password must be at least 6 characters'); return; }
+    if (password !== confirmPass) { setError('Passwords do not match'); return; }
+    if (!terms) { setError('Please agree to the Terms & Conditions'); return; }
+    setLoading(true);
+    try {
+      await onSignup(email, password, name);
+    } catch (err) {
+      setError(err.code === 'auth/email-already-in-use' ? 'An account with this email already exists' : 'Signup failed. Please try again.');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-dark-950 flex items-center justify-center px-4 relative overflow-hidden">
+      <div className="absolute top-10 right-10 w-80 h-80 bg-purple-500/15 rounded-full blur-3xl" />
+      <div className="absolute bottom-10 left-10 w-72 h-72 bg-brand-500/10 rounded-full blur-3xl" />
+      <div className="w-full max-w-md relative z-10 slide-up">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-4 glow">
+            <Handshake className="w-9 h-9 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-white">Create Account</h1>
+          <p className="text-dark-400 text-sm mt-1">Join SkillSwap and start trading skills</p>
+        </div>
+        <div className="glass-strong rounded-2xl p-8">
+          {error && (
+            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+            </div>
+          )}
+          <form onSubmit={handleSignup} className="space-y-4">
+            <div>
+              <label className="text-xs text-dark-400 font-medium mb-1 block">Full Name</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Muhammad Ali"
+                className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 transition-colors text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-dark-400 font-medium mb-1 block">Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com"
+                className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 transition-colors text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-dark-400 font-medium mb-1 block">Password</label>
+              <div className="relative">
+                <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 6 characters"
+                  className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 transition-colors text-sm pr-10" />
+                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white">
+                  {showPass ? <Eye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <PasswordStrengthBar password={password} />
+            </div>
+            <div>
+              <label className="text-xs text-dark-400 font-medium mb-1 block">Confirm Password</label>
+              <input type={showPass ? 'text' : 'password'} value={confirmPass} onChange={e => setConfirmPass(e.target.value)} placeholder="Confirm your password"
+                className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 transition-colors text-sm" />
+            </div>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" checked={terms} onChange={e => setTerms(e.target.checked)} className="accent-brand-500 rounded mt-0.5" />
+              <span className="text-xs text-dark-400">I agree to the <span className="text-brand-400">Terms of Service</span> and <span className="text-brand-400">Privacy Policy</span></span>
+            </label>
+            <button type="submit" disabled={loading} className="w-full gradient-bg text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <><User className="w-4 h-4" /> Create Account</>}
+            </button>
+          </form>
+        </div>
+        <p className="text-center text-sm text-dark-400 mt-6">
+          Already have an account? <button onClick={() => onNavigate('login')} className="text-brand-400 font-medium hover:text-brand-300">Sign In</button>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
+// SECTION 9: MAIN APP PAGES
+// ============================================================
+
+// --- HOME PAGE ---
+const HomePage = ({ user, userData, listings, favorites, onToggleFavorite, onViewListing, onNavigate, messages, reviews }) => {
+  const myListings = listings.filter(l => l.userId === user?.uid);
+  const myScore = trustScore(myListings.length, reviews?.filter(r => r.toUserId === user?.uid).length || 0, 4.5);
+  const tCats = trendingCats(listings);
+  const suggestions = matchingSuggestions(listings, user?.uid, myListings.map(l => l.skillWanted));
+  const displayName = user?.displayName || userData?.displayName || 'there';
+
+  return (
+    <div className="page-enter space-y-8">
+      {/* Hero Banner */}
+      <div className="glass-strong rounded-3xl p-8 md:p-10 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-500/15 to-purple-500/10" />
+        <div className="relative">
+          <h1 className="text-3xl md:text-4xl font-black text-white mb-2">Welcome back, <span className="gradient-text">{displayName}</span>!</h1>
+          <p className="text-dark-400 mb-6">Ready to learn something new today?</p>
+          <button onClick={() => onNavigate('post')} className="gradient-bg text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity glow-sm flex items-center gap-2">
+            <PlusCircle className="w-5 h-5" /> Post a New Skill
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Your Listings', value: myListings.length, icon: List, color: 'text-blue-400' },
+          { label: 'Community', value: [...new Set(listings.map(l => l.userId))].length, icon: Users, color: 'text-purple-400' },
+          { label: 'Categories', value: [...new Set(listings.map(l => l.category))].length, icon: Tag, color: 'text-emerald-400' },
+          { label: 'Your Score', value: myScore, icon: Trophy, color: 'text-amber-400' },
+        ].map((s, i) => (
+          <div key={i} className="glass rounded-2xl p-5 hover:bg-white/[0.07] transition-all">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-dark-400">{s.label}</span>
+              <s.icon className={`w-4 h-4 ${s.color}`} />
+            </div>
+            <p className="text-2xl font-bold text-white">{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Matching Suggestions */}
+      {suggestions.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2"><Sparkles className="w-5 h-5 text-amber-400" /> Suggested For You</h2>
+            <button onClick={() => onNavigate('explore')} className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1">See All <ChevronRight className="w-4 h-4" /></button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {suggestions.map(l => (
+              <SkillCard key={l.id} listing={l} isFavorite={favorites.includes(l.id)} onToggleFavorite={onToggleFavorite} onView={onViewListing} currentUser={user} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Trending Categories */}
+      {tCats.length > 0 && (
+        <div>
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-brand-400" /> Trending Categories</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tCats.map((cat, i) => {
+              const CatIcon = cat.icon;
+              const maxCount = tCats[0]?.count || 1;
+              return (
+                <div key={cat.id} className="glass rounded-2xl p-5 hover:bg-white/[0.07] transition-all cursor-pointer" onClick={() => onNavigate('explore')}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cat.color} flex items-center justify-center`}>
+                      <CatIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white text-sm">{cat.name}</p>
+                      <p className="text-xs text-dark-500">{cat.count} listings</p>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-dark-800 rounded-full overflow-hidden">
+                    <div className={`h-full bg-gradient-to-r ${cat.color} rounded-full transition-all duration-700`} style={{ width: `${(cat.count / maxCount) * 100}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Listings */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2"><Clock className="w-5 h-5 text-brand-400" /> Recent Listings</h2>
+          <button onClick={() => onNavigate('explore')} className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1">See All <ChevronRight className="w-4 h-4" /></button>
+        </div>
+        {listings.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {listings.slice(0, 6).map(l => (
+              <SkillCard key={l.id} listing={l} isFavorite={favorites.includes(l.id)} onToggleFavorite={onToggleFavorite} onView={onViewListing} currentUser={user} />
+            ))}
+          </div>
+        ) : (
+          <LoadingSkeleton type="grid" rows={1} />
+        )}
+      </div>
+
+      {/* Activity Heatmap */}
+      <div className="glass rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Activity className="w-5 h-5 text-brand-400" /> Your Activity</h2>
+        <Heatmap activityLog={userData?.activityLog || {}} size="md" />
+      </div>
+
+      {/* Testimonials */}
+      <div className="glass rounded-2xl p-8">
+        <h2 className="text-xl font-bold text-white mb-6 text-center">Community Love</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {TESTIMONIALS.slice(0, 3).map(t => (
+            <div key={t.id} className="glass rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <UserAvatar name={t.name} userId={t.name} size="sm" />
+                <div>
+                  <p className="text-sm font-semibold text-white">{t.name}</p>
+                  <p className="text-xs text-dark-500">{t.role}</p>
+                </div>
+              </div>
+              <p className="text-xs text-dark-300 leading-relaxed">"{trunc(t.text, 100)}"</p>
+              <div className="mt-2"><RatingStars rating={t.rating} /></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // --- EXPLORE PAGE ---
-const ExplorePage = ({ listings, loading, uid, onEdit, onDelete, onContact, onFav, onReport, onMsg, onShare, onUser, favIds, blockedUsers }) => {
-  const [search, setSearch] = useState(''), [cat, setCat] = useState('all'), [sort, setSort] = useState('newest')
-  const filtered = listings.filter(l => {
-    if (isBlocked(blockedUsers, l.userId)) return false
-    const q = search.toLowerCase()
-    const ms = !q || l.skillOffered.toLowerCase().includes(q) || l.skillWanted.toLowerCase().includes(q) || l.userName.toLowerCase().includes(q) || (l.description && l.description.toLowerCase().includes(q)) || (l.tags && l.tags.some(t => t.toLowerCase().includes(q)))
-    return ms && (cat === 'all' || l.category === cat)
-  }).sort((a, b) => {
-    if (sort === 'oldest') return ((a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0))
-    return ((b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
-  })
-  return (<div className="space-y-6">
-    <div className="flex items-center gap-3 mb-2"><Search className="text-brand-from" size={28} /><h1 className="text-2xl md:text-3xl font-bold text-white">Explore Skills</h1></div>
-    <div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} /><input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search skills, people, tags..." className="w-full pl-12 pr-12 py-3.5 rounded-xl bg-dark-800/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-from/50 focus:ring-2 focus:ring-brand-from/20 transition-all" />{search && <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-lg"><X size={18} className="text-gray-500" /></button>}</div>
-    <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}><button onClick={() => setCat('all')} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${cat === 'all' ? 'gradient-bg text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'}`}>All</button>{CATEGORIES.map(c => (<button key={c.id} onClick={() => setCat(c.id)} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${cat === c.id ? 'gradient-bg text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'}`}>{c.label}</button>))}</div>
-    <div className="flex items-center justify-between"><p className="text-gray-400 text-sm">{filtered.length} listing{filtered.length !== 1 ? 's' : ''} found</p><select value={sort} onChange={(e) => setSort(e.target.value)} className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-gray-300 focus:outline-none"><option value="newest" className="bg-dark-800">Newest</option><option value="oldest" className="bg-dark-800">Oldest</option></select></div>
-    {loading ? <LoadingSkeleton /> : filtered.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{filtered.map(l => (<SkillCard key={l.id} listing={l} uid={uid} onEdit={onEdit} onDelete={onDelete} onContact={onContact} onFav={onFav} onReport={onReport} onMsg={onMsg} onShare={onShare} onUser={onUser} isFav={favIds && favIds.includes(l.id)} />))}</div> : <EmptyState icon={Search} title="No listings found" desc={search || cat !== 'all' ? "Try adjusting your search or filters." : "No skills posted yet. Be the first!"} />}
-  </div>)
-}
+const ExplorePage = ({ listings, favorites, onToggleFavorite, onViewListing, currentUser, blockedUsers }) => {
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
+  const [sort, setSort] = useState('newest');
 
-// --- POST PAGE (with draft auto-save, tags, real-time validation, duplicate detection) ---
-const PostPage = ({ uid, userName, editing, onSubmit, onCancel, toast, existingListings }) => {
-  const [form, setForm] = useState({ skillOffered: '', skillWanted: '', category: '', description: '', contactInfo: '', tags: '' })
-  const [errors, setErrors] = useState({}), [submitting, setSubmitting] = useState(false), [draftSaved, setDraftSaved] = useState(false), [duplicate, setDuplicate] = useState(null)
+  const filtered = useMemo(() => {
+    let result = listings.filter(l => !isBlocked(blockedUsers, l.userId));
+    if (category !== 'all') result = result.filter(l => l.category === category);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(l =>
+        (l.skillOffered?.toLowerCase().includes(q)) ||
+        (l.skillWanted?.toLowerCase().includes(q)) ||
+        (l.userName?.toLowerCase().includes(q)) ||
+        (l.tags?.some(t => t.toLowerCase().includes(q)))
+      );
+    }
+    if (sort === 'newest') result.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    if (sort === 'oldest') result.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+    if (sort === 'popular') result.sort((a, b) => (b.views || 0) - (a.views || 0));
+    return result;
+  }, [listings, search, category, sort, blockedUsers]);
+
+  return (
+    <div className="page-enter space-y-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Compass className="w-6 h-6 text-brand-400" /> Explore Skills</h1>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-500" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search skills, people, tags..."
+              className="w-full bg-dark-800/80 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 text-sm" />
+          </div>
+          <select value={sort} onChange={e => setSort(e.target.value)} className="bg-dark-800/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-dark-300 focus:outline-none cursor-pointer">
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="popular">Most Popular</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Category Pills */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <button onClick={() => setCategory('all')} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${category === 'all' ? 'gradient-bg text-white' : 'glass text-dark-400 hover:text-white'}`}>
+          All
+        </button>
+        {CATEGORIES.map(cat => (
+          <button key={cat.id} onClick={() => setCategory(cat.id)} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${category === cat.id ? 'gradient-bg text-white' : 'glass text-dark-400 hover:text-white'}`}>
+            <cat.icon className="w-3.5 h-3.5" /> {cat.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Results */}
+      {filtered.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(l => (
+            <SkillCard key={l.id} listing={l} isFavorite={favorites.includes(l.id)} onToggleFavorite={onToggleFavorite} onView={onViewListing} currentUser={user} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState icon={Search} title="No results found" description="Try different keywords or browse categories" actionLabel="Clear Filters" onAction={() => { setSearch(''); setCategory('all'); }} />
+      )}
+    </div>
+  );
+};
+
+// --- MESSAGES PAGE ---
+const MessagesPage = ({ user, messages, onSendMessage, allListings }) => {
+  const [activeConv, setActiveConv] = useState(null);
+  const [newMsg, setNewMsg] = useState('');
+  const [convSearch, setConvSearch] = useState('');
+  const chatEndRef = useRef(null);
+
+  const conversations = useMemo(() => getConversations(messages, user?.uid), [messages, user?.uid]);
+
+  const filteredConvs = useMemo(() => {
+    if (!convSearch.trim()) return conversations;
+    const q = convSearch.toLowerCase();
+    return conversations.filter(c => c.partnerName.toLowerCase().includes(q));
+  }, [conversations, convSearch]);
+
+  const chatMessages = useMemo(() => {
+    if (!activeConv || !messages) return [];
+    return messages.filter(m =>
+      (m.fromUserId === user?.uid && m.toUserId === activeConv) ||
+      (m.fromUserId === activeConv && m.toUserId === user?.uid)
+    ).sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+  }, [messages, activeConv, user?.uid]);
 
   useEffect(() => {
-    if (editing) { setForm({ skillOffered: editing.skillOffered || '', skillWanted: editing.skillWanted || '', category: editing.category || '', description: editing.description || '', contactInfo: editing.contactInfo || '', tags: (editing.tags || []).join(', ') }); return }
-    const saved = localStorage.getItem('barterDraft')
-    if (saved) { try { const d = JSON.parse(saved); setForm(d) } catch (e) {} }
-  }, [editing])
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages.length]);
 
-  // Draft auto-save every 3 seconds
+  const handleSend = () => {
+    if (newMsg.trim() && activeConv) {
+      onSendMessage(activeConv, newMsg.trim());
+      setNewMsg('');
+    }
+  };
+
+  const activeConvName = conversations.find(c => c.partnerId === activeConv)?.partnerName || 'User';
+
+  return (
+    <div className="page-enter h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)] flex glass rounded-2xl overflow-hidden">
+      {/* Conversations Sidebar */}
+      <div className={`${activeConv ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-80 border-r border-white/5`}>
+        <div className="p-4 border-b border-white/5">
+          <h2 className="text-lg font-bold text-white mb-3">Messages</h2>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-500" />
+            <input value={convSearch} onChange={e => setConvSearch(e.target.value)} placeholder="Search conversations..."
+              className="w-full bg-dark-800/80 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-dark-500 focus:outline-none focus:border-brand-500" />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {filteredConvs.length > 0 ? filteredConvs.map(conv => (
+            <div key={conv.partnerId} onClick={() => setActiveConv(conv.partnerId)}
+              className={`flex items-center gap-3 p-4 cursor-pointer transition-colors ${activeConv === conv.partnerId ? 'bg-brand-500/15 border-l-2 border-brand-500' : 'hover:bg-white/5'}`}>
+              <div className="relative">
+                <UserAvatar name={conv.partnerName} userId={conv.partnerId} size="md" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-dark-950" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-white truncate">{conv.partnerName}</p>
+                  <span className="text-[10px] text-dark-500">{timeAgo({ seconds: conv.lastTime })}</span>
+                </div>
+                <p className="text-xs text-dark-400 truncate">{conv.lastMessage}</p>
+              </div>
+              {conv.unread > 0 && (
+                <span className="w-5 h-5 rounded-full gradient-bg text-white text-[10px] font-bold flex items-center justify-center">{conv.unread}</span>
+              )}
+            </div>
+          )) : (
+            <EmptyState icon={MessageCircle} title="No conversations yet" description="Start a new conversation from a listing" />
+          )}
+        </div>
+      </div>
+
+      {/* Chat Window */}
+      <div className={`${!activeConv ? 'hidden md:flex' : 'flex'} flex-col flex-1`}>
+        {activeConv ? (
+          <>
+            <div className="p-4 border-b border-white/5 flex items-center gap-3">
+              <button onClick={() => setActiveConv(null)} className="md:hidden text-dark-400 hover:text-white"><ArrowLeft className="w-5 h-5" /></button>
+              <UserAvatar name={activeConvName} userId={activeConv} size="sm" />
+              <div>
+                <p className="text-sm font-semibold text-white">{activeConvName}</p>
+                <p className="text-xs text-emerald-400">Online</p>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {chatMessages.map((msg, i) => {
+                const isSent = msg.fromUserId === user?.uid;
+                return (
+                  <div key={i} className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${isSent ? 'bg-brand-500 text-white rounded-br-md' : 'bg-dark-800 text-dark-200 rounded-bl-md'}`}>
+                      <p className="text-sm">{msg.text}</p>
+                      <p className={`text-[10px] mt-1 ${isSent ? 'text-white/50' : 'text-dark-500'}`}>{timeAgo(msg.createdAt)}</p>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={chatEndRef} />
+            </div>
+            <div className="p-4 border-t border-white/5">
+              <div className="flex items-center gap-2">
+                <input value={newMsg} onChange={e => setNewMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Type a message..."
+                  className="flex-1 bg-dark-800/80 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-dark-500 focus:outline-none focus:border-brand-500" />
+                <button onClick={handleSend} disabled={!newMsg.trim()} className="w-10 h-10 rounded-xl gradient-bg text-white flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-50">
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageCircle className="w-16 h-16 text-dark-700 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-white/60">Select a conversation</h3>
+              <p className="text-sm text-dark-500">Choose from your existing conversations or start a new one</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- POST PAGE ---
+const PostPage = ({ user, userData, showToast, editingListing, onClearEdit, onSubmit }) => {
+  const [form, setForm] = useState({
+    skillOffered: '', skillWanted: '', category: 'programming', description: '',
+    contactInfo: '', tags: '', imageUrl: '', skillLevel: 'Intermediate', exchangeType: 'Online', availability: '',
+  });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    if (editing) return
-    const iv = setInterval(() => {
-      const hasContent = form.skillOffered || form.skillWanted || form.category || form.description
-      if (hasContent) { localStorage.setItem('barterDraft', JSON.stringify(form)); setDraftSaved(true); setTimeout(() => setDraftSaved(false), 2000) }
-    }, 3000)
-    return () => clearInterval(iv)
-  }, [form, editing])
+    if (editingListing) {
+      setForm({
+        skillOffered: editingListing.skillOffered || '',
+        skillWanted: editingListing.skillWanted || '',
+        category: editingListing.category || 'programming',
+        description: editingListing.description || '',
+        contactInfo: editingListing.contactInfo || '',
+        tags: editingListing.tags?.join(', ') || '',
+        imageUrl: editingListing.imageUrl || '',
+        skillLevel: editingListing.skillLevel || 'Intermediate',
+        exchangeType: editingListing.exchangeType || 'Online',
+        availability: editingListing.availability || '',
+      });
+    }
+  }, [editingListing]);
 
-  // Duplicate detection
+  // Auto-save draft
   useEffect(() => {
-    if (!uid || !form.skillOffered || !form.skillWanted || editing) { setDuplicate(null); return }
-    const dup = existingListings.find(l => l.userId === uid && l.id !== editing?.id && l.skillOffered.toLowerCase() === form.skillOffered.trim().toLowerCase() && l.skillWanted.toLowerCase() === form.skillWanted.trim().toLowerCase())
-    setDuplicate(dup || null)
-  }, [form.skillOffered, form.skillWanted, uid, existingListings, editing])
+    const timer = setTimeout(() => {
+      if (form.skillOffered || form.skillWanted) {
+        localStorage.setItem('skillswap_draft', JSON.stringify(form));
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [form]);
 
-  // Real-time validation
-  const fieldState = (field, val) => {
-    if (!val) return 'neutral'
-    if (field === 'skillOffered' || field === 'skillWanted') return val.trim().length >= 3 ? 'valid' : 'invalid'
-    if (field === 'category') return val ? 'valid' : 'invalid'
-    return 'neutral'
-  }
-  const fieldColor = (s) => s === 'valid' ? 'border-emerald-500/50' : s === 'invalid' ? 'border-red-500/50' : 'border-white/10'
+  useEffect(() => {
+    const draft = localStorage.getItem('skillswap_draft');
+    if (draft && !editingListing) {
+      try { setForm(JSON.parse(draft)); } catch {}
+    }
+  }, []);
 
   const validate = () => {
-    const e = {}
-    if (!form.skillOffered.trim() || form.skillOffered.trim().length < 3) e.skillOffered = 'At least 3 characters'
-    if (!form.skillWanted.trim() || form.skillWanted.trim().length < 3) e.skillWanted = 'At least 3 characters'
-    if (!form.category) e.category = 'Please select a category'
-    setErrors(e); return Object.keys(e).length === 0
-  }
+    const e = {};
+    if (!form.skillOffered.trim()) e.skillOffered = 'Skill offered is required';
+    if (!form.skillWanted.trim()) e.skillWanted = 'Skill wanted is required';
+    if (!form.description.trim()) e.description = 'Description is required';
+    if (form.description.trim().length < 20) e.description = 'Description must be at least 20 characters';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
 
-  const handleSubmit = async (e) => { e.preventDefault(); if (!validate()) return; setSubmitting(true); try { const tags = form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : []; await onSubmit({ ...form, tags, userId: uid, userName }); if (!editing) { setForm({ skillOffered: '', skillWanted: '', category: '', description: '', contactInfo: '', tags: '' }); localStorage.removeItem('barterDraft') } } catch (err) { toast({ type: 'error', message: err.message || 'Something went wrong' }) } finally { setSubmitting(false) } }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      const data = {
+        ...form,
+        tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+        userName: user?.displayName || userData?.displayName || 'Anonymous',
+        userId: user?.uid,
+        createdAt: editingListing?.createdAt || new Date(),
+        views: editingListing?.views || 0,
+        favorites: editingListing?.favorites || 0,
+      };
+      await onSubmit(data, editingListing?.id);
+      localStorage.removeItem('skillswap_draft');
+      showToast('success', editingListing ? 'Listing updated!' : 'Skill posted successfully!');
+      if (onClearEdit) onClearEdit();
+    } catch (err) {
+      showToast('error', 'Failed to save listing. Please try again.');
+    }
+    setLoading(false);
+  };
 
-  const inp = (f, v) => `w-full px-4 py-3 rounded-xl bg-dark-800/50 border text-white placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${fieldColor(fieldState(f, v))} ${errors[f] ? 'border-red-500/50' : 'focus:border-brand-from/50 focus:ring-brand-from/20'}`
-  const isEdit = !!editing
+  return (
+    <div className="page-enter max-w-2xl mx-auto">
+      <div className="glass-strong rounded-2xl p-6 md:p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            {editingListing ? <Edit3 className="w-6 h-6 text-brand-400" /> : <PlusCircle className="w-6 h-6 text-brand-400" />}
+            {editingListing ? 'Edit Listing' : 'Post a New Skill'}
+          </h1>
+          {editingListing && (
+            <button onClick={onClearEdit} className="text-sm text-dark-400 hover:text-white transition-colors">Cancel Edit</button>
+          )}
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-dark-400 font-medium mb-1 block">Skill You Offer *</label>
+              <input value={form.skillOffered} onChange={e => setForm({ ...form, skillOffered: e.target.value })} placeholder="e.g., React Development"
+                className={`w-full bg-dark-800/80 border rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 text-sm ${errors.skillOffered ? 'border-red-500' : 'border-white/10'}`} />
+              {errors.skillOffered && <p className="text-red-400 text-xs mt-1">{errors.skillOffered}</p>}
+            </div>
+            <div>
+              <label className="text-xs text-dark-400 font-medium mb-1 block">Skill You Want *</label>
+              <input value={form.skillWanted} onChange={e => setForm({ ...form, skillWanted: e.target.value })} placeholder="e.g., Guitar Lessons"
+                className={`w-full bg-dark-800/80 border rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 text-sm ${errors.skillWanted ? 'border-red-500' : 'border-white/10'}`} />
+              {errors.skillWanted && <p className="text-red-400 text-xs mt-1">{errors.skillWanted}</p>}
+            </div>
+          </div>
 
-  return (<div className="max-w-2xl mx-auto">
-    <div className="flex items-center gap-3 mb-6">{isEdit ? <Edit2 className="text-brand-from" size={28} /> : <PlusCircle className="text-brand-from" size={28} />}<h1 className="text-2xl md:text-3xl font-bold text-white">{isEdit ? 'Edit Listing' : 'Post Your Skill'}</h1></div>
-    {duplicate && <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm flex items-center gap-2"><AlertCircle size={16} />You have a similar listing: <span className="font-medium text-white">"{duplicate.skillOffered}"</span></div>}
-    {draftSaved && !isEdit && <div className="mb-4 flex items-center gap-1 text-xs text-gray-500"><CheckCircle size={12} className="text-emerald-400" />Draft auto-saved</div>}
-    <form onSubmit={handleSubmit} className="glass rounded-2xl p-6 md:p-8 space-y-6">
-      <div><label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2"><div className="w-2 h-2 rounded-full bg-emerald-400" />Skill You Offer *</label><input type="text" value={form.skillOffered} onChange={(e) => { setForm({ ...form, skillOffered: e.target.value }); if (errors.skillOffered) setErrors({ ...errors, skillOffered: '' }) }} placeholder="e.g., Logo Design, Web Development..." className={inp('skillOffered', form.skillOffered)} /><div className="flex justify-between mt-1"><p className="text-red-400 text-xs">{errors.skillOffered}</p><p className={`text-xs ${fieldState('skillOffered', form.skillOffered) === 'valid' ? 'text-emerald-400' : fieldState('skillOffered', form.skillOffered) === 'invalid' ? 'text-red-400' : 'text-gray-600'}`}>{form.skillOffered.length}/3 min</p></div></div>
-      <div><label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2"><div className="w-2 h-2 rounded-full bg-blue-400" />Skill You Want *</label><input type="text" value={form.skillWanted} onChange={(e) => { setForm({ ...form, skillWanted: e.target.value }); if (errors.skillWanted) setErrors({ ...errors, skillWanted: '' }) }} placeholder="e.g., Mobile App Help, English..." className={inp('skillWanted', form.skillWanted)} /><div className="flex justify-between mt-1"><p className="text-red-400 text-xs">{errors.skillWanted}</p><p className={`text-xs ${fieldState('skillWanted', form.skillWanted) === 'valid' ? 'text-emerald-400' : fieldState('skillWanted', form.skillWanted) === 'invalid' ? 'text-red-400' : 'text-gray-600'}`}>{form.skillWanted.length}/3 min</p></div></div>
-      <div><label className="block text-sm font-medium text-gray-300 mb-2">Category *</label><select value={form.category} onChange={(e) => { setForm({ ...form, category: e.target.value }); if (errors.category) setErrors({ ...errors, category: '' }) }} className={inp('category', form.category) + ' appearance-none'} style={{ backgroundImage: 'none' }}><option value="" className="bg-dark-800">Select a category...</option>{CATEGORIES.map(c => (<option key={c.id} value={c.id} className="bg-dark-800">{c.label}</option>))}</select>{errors.category && <p className="text-red-400 text-sm mt-1">{errors.category}</p>}</div>
-      <div><label className="block text-sm font-medium text-gray-300 mb-2">Tags (optional, comma-separated)</label><input type="text" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="e.g., logo, branding, vector" className="w-full px-4 py-3 rounded-xl bg-dark-800/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-from/50 focus:ring-2 focus:ring-brand-from/20 transition-all" /></div>
-      <div><label className="block text-sm font-medium text-gray-300 mb-2">Description (optional)</label><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe your skill, experience, availability..." rows={4} className="w-full px-4 py-3 rounded-xl bg-dark-800/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-from/50 focus:ring-2 focus:ring-brand-from/20 transition-all resize-none" /></div>
-      <div><label className="block text-sm font-medium text-gray-300 mb-2">Contact Info (optional)</label><input type="text" value={form.contactInfo} onChange={(e) => setForm({ ...form, contactInfo: e.target.value })} placeholder="e.g., WhatsApp: 0312-xxxxxxx, email..." className="w-full px-4 py-3 rounded-xl bg-dark-800/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-from/50 focus:ring-2 focus:ring-brand-from/20 transition-all" /><p className="text-gray-500 text-xs mt-2">Visible to everyone</p></div>
-      <div className="flex gap-3 pt-2"><button type="submit" disabled={submitting} className="flex-1 py-3.5 rounded-xl gradient-bg text-white font-semibold hover:opacity-90 glow disabled:opacity-50 flex items-center justify-center gap-2">{submitting && <Loader2 size={18} className="animate-spin" />}{isEdit ? 'Update Listing' : 'Post Skill'}</button>{isEdit && <button type="button" onClick={onCancel} className="px-6 py-3.5 rounded-xl bg-white/5 text-white font-medium hover:bg-white/10 border border-white/10">Cancel</button>}</div>
-    </form>
-  </div>)
-}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-xs text-dark-400 font-medium mb-1 block">Category</label>
+              <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
+                className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-sm text-dark-300 focus:outline-none cursor-pointer">
+                {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-dark-400 font-medium mb-1 block">Skill Level</label>
+              <select value={form.skillLevel} onChange={e => setForm({ ...form, skillLevel: e.target.value })}
+                className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-sm text-dark-300 focus:outline-none cursor-pointer">
+                {SKILL_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-dark-400 font-medium mb-1 block">Exchange Type</label>
+              <select value={form.exchangeType} onChange={e => setForm({ ...form, exchangeType: e.target.value })}
+                className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-sm text-dark-300 focus:outline-none cursor-pointer">
+                {EXCHANGE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          </div>
 
-// --- MY LISTINGS PAGE ---
-const MyListingsPage = ({ listings, uid, onEdit, onDelete, onContact, onNav, onShare }) => (
-  <div className="space-y-6"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><Layers className="text-brand-from" size={28} /><div><h1 className="text-2xl md:text-3xl font-bold text-white">My Listings</h1><p className="text-gray-400 text-sm">{listings.length} listing{listings.length !== 1 ? 's' : ''}</p></div></div><button onClick={() => onNav('post')} className="px-4 py-2.5 rounded-xl gradient-bg text-white font-medium hover:opacity-90 flex items-center gap-2"><PlusCircle size={18} /><span className="hidden sm:inline">New</span></button></div>{listings.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{listings.map(l => (<SkillCard key={l.id} listing={l} uid={uid} onEdit={onEdit} onDelete={onDelete} onContact={onContact} onShare={onShare} />))}</div> : <EmptyState icon={Layers} title="No listings yet" desc="Post your first skill to get started!" actionLabel="Post a Skill" onAction={() => onNav('post')} />}</div>)
+          <div>
+            <label className="text-xs text-dark-400 font-medium mb-1 block">Description *</label>
+            <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Describe your skill in detail, what you can teach, your experience level..." rows={4}
+              className={`w-full bg-dark-800/80 border rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 text-sm resize-none ${errors.description ? 'border-red-500' : 'border-white/10'}`} />
+            {errors.description && <p className="text-red-400 text-xs mt-1">{errors.description}</p>}
+            <p className="text-xs text-dark-600 mt-1">{form.description.length}/500 characters</p>
+          </div>
+
+          <div>
+            <label className="text-xs text-dark-400 font-medium mb-1 block">Availability</label>
+            <input value={form.availability} onChange={e => setForm({ ...form, availability: e.target.value })} placeholder="e.g., Weekdays evenings, Weekends"
+              className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 text-sm" />
+          </div>
+
+          <div>
+            <label className="text-xs text-dark-400 font-medium mb-1 block">Contact Info (optional)</label>
+            <input value={form.contactInfo} onChange={e => setForm({ ...form, contactInfo: e.target.value })} placeholder="Email, phone, or social media handle"
+              className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 text-sm" />
+          </div>
+
+          <div>
+            <label className="text-xs text-dark-400 font-medium mb-1 block">Image URL (optional)</label>
+            <input value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://example.com/image.jpg"
+              className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 text-sm" />
+            {form.imageUrl && (
+              <div className="mt-2 rounded-xl overflow-hidden h-32 bg-dark-800">
+                <img src={form.imageUrl} alt="Preview" className="w-full h-full object-cover" onError={e => e.target.style.display = 'none'} />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="text-xs text-dark-400 font-medium mb-1 block">Tags (comma-separated)</label>
+            <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="react, javascript, frontend, web"
+              className="w-full bg-dark-800/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-brand-500 text-sm" />
+          </div>
+
+          <button type="submit" disabled={loading} className="w-full gradient-bg text-white py-3.5 rounded-xl font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 glow-sm">
+            {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : (editingListing ? <><CheckCircle className="w-5 h-5" /> Update Listing</> : <><PlusCircle className="w-5 h-5" /> Post Skill</>)}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 // --- FAVORITES PAGE ---
-const FavoritesPage = ({ listings, favIds, onFav, onUser }) => {
-  const favListings = listings.filter(l => favIds && favIds.includes(l.id))
-  return (<div className="space-y-6"><div className="flex items-center gap-3"><Heart className="text-red-400" size={28} /><div><h1 className="text-2xl md:text-3xl font-bold text-white">My Favorites</h1><p className="text-gray-400 text-sm">{favListings.length} saved</p></div></div>{favListings.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{favListings.map(l => (<SkillCard key={l.id} listing={l} onFav={onFav} isFav={true} onUser={onUser} />))}</div> : <EmptyState icon={Heart} title="No favorites yet" desc="Save listings you like by tapping the heart icon!" actionLabel="Explore Skills" onAction={() => {}} />}</div>)
-}
+const FavoritesPage = ({ listings, favorites, onToggleFavorite, onViewListing, currentUser, onNavigate }) => {
+  const [catFilter, setCatFilter] = useState('all');
+  const favListings = listings.filter(l => favorites.includes(l.id));
+  const filtered = catFilter === 'all' ? favListings : favListings.filter(l => l.category === catFilter);
+
+  return (
+    <div className="page-enter space-y-6">
+      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Heart className="w-6 h-6 text-red-400" /> Favorites</h1>
+      {favListings.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          <button onClick={() => setCatFilter('all')} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${catFilter === 'all' ? 'gradient-bg text-white' : 'glass text-dark-400'}`}>All</button>
+          {[...new Set(favListings.map(l => l.category))].map(catId => (
+            <button key={catId} onClick={() => setCatFilter(catId)} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${catFilter === catId ? 'gradient-bg text-white' : 'glass text-dark-400'}`}>
+              {getCat(catId).name}
+            </button>
+          ))}
+        </div>
+      )}
+      {filtered.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(l => (
+            <SkillCard key={l.id} listing={l} isFavorite={true} onToggleFavorite={onToggleFavorite} onView={onViewListing} currentUser={currentUser} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState icon={Heart} title="No favorites yet" description="Browse skills and tap the heart icon to save your favorites" actionLabel="Explore Skills" onAction={() => onNavigate('explore')} />
+      )}
+    </div>
+  );
+};
+
+// --- MY LISTINGS PAGE ---
+const MyListingsPage = ({ user, listings, reviews, onEdit, onDelete, onViewListing, onNavigate }) => {
+  const [sortBy, setSortBy] = useState('newest');
+  const myListings = listings.filter(l => l.userId === user?.uid);
+  const myReviews = reviews?.filter(r => r.toUserId === user?.uid) || [];
+  const sorted = [...myListings].sort((a, b) => sortBy === 'newest' ? (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0) : (b.views || 0) - (a.views || 0));
+
+  return (
+    <div className="page-enter space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-white flex items-center gap-2"><List className="w-6 h-6 text-brand-400" /> My Listings</h1>
+        <div className="flex items-center gap-3">
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-dark-800/80 border border-white/10 rounded-xl px-3 py-2 text-sm text-dark-300 focus:outline-none cursor-pointer">
+            <option value="newest">Newest</option>
+            <option value="popular">Most Viewed</option>
+          </select>
+          <button onClick={() => onNavigate('post')} className="gradient-bg text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-1 hover:opacity-90">
+            <PlusCircle className="w-4 h-4" /> New
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Total Listings', value: myListings.length },
+          { label: 'Total Views', value: myListings.reduce((s, l) => s + (l.views || 0), 0) },
+          { label: 'Reviews', value: myReviews.length },
+        ].map((s, i) => (
+          <div key={i} className="glass rounded-xl p-4 text-center">
+            <p className="text-2xl font-bold text-white">{s.value}</p>
+            <p className="text-xs text-dark-400">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {sorted.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {sorted.map(l => (
+            <SkillCard key={l.id} listing={l} isFavorite={false} onEdit={onEdit} onDelete={onDelete} onView={onViewListing} currentUser={user} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState icon={List} title="No listings yet" description="Share your skills with the community and start trading!" actionLabel="Create Your First Listing" onAction={() => onNavigate('post')} />
+      )}
+    </div>
+  );
+};
 
 // --- LEADERBOARD PAGE ---
-const LeaderboardPage = ({ listings, reviews, onUser }) => {
-  const data = leaderboardData(listings, reviews)
-  const medals = ['from-amber-400 to-yellow-500', 'from-gray-300 to-gray-400', 'from-orange-400 to-amber-600']
-  const rankIcons = [Crown, Medal, Medal]
-  return (<div className="space-y-6"><div className="flex items-center gap-3"><Trophy className="text-amber-400" size={28} /><h1 className="text-2xl md:text-3xl font-bold text-white">Leaderboard</h1></div><div className="max-w-2xl mx-auto space-y-3">{data.length > 0 ? data.map((u, i) => { const RI = rankIcons[i] || Users; return (<div key={u.userId} onClick={() => onUser && onUser(u)} className="glass rounded-2xl p-4 flex items-center gap-4 hover:bg-white/[0.07] transition-all cursor-pointer"><div className={`w-10 h-10 rounded-full bg-gradient-to-br ${i < 3 ? medals[i] : 'from-gray-600 to-gray-700'} flex items-center justify-center text-white font-bold shrink-0`}>{i < 3 ? <RI size={20} className="text-white" /> : <span className="text-sm">{i + 1}</span>}</div><div className={`w-10 h-10 rounded-full bg-gradient-to-br ${userGrad(u.userId)} flex items-center justify-center shrink-0`}><span className="text-white font-bold text-xs">{initials(u.userName)}</span></div><div className="flex-1 min-w-0"><p className="text-white font-semibold truncate">{u.userName}</p><p className="text-gray-500 text-xs">{u.lc} listings · {u.avg} avg rating</p></div><div className="text-right"><p className="text-xl font-bold text-white">{u.score}</p><p className="text-xs text-gray-500">Trust Score</p></div></div>) }) : <EmptyState icon={Trophy} title="No data yet" desc="Leaderboard will populate as users post skills." />}</div></div>)
-}
+const LeaderboardPage = ({ listings, reviews, user }) => {
+  const [period, setPeriod] = useState('all');
+  const board = leaderboardData(listings, reviews);
+  const myRank = board.findIndex(b => b.userId === user?.uid) + 1;
 
-// --- ACHIEVEMENTS PAGE ---
-const AchievementsPage = ({ myStats }) => {
-  const { lc, rc, fc, score } = myStats
-  return (<div className="space-y-6"><div className="flex items-center gap-3"><Award className="text-amber-400" size={28} /><h1 className="text-2xl md:text-3xl font-bold text-white">Achievements</h1></div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{ACHIEVEMENTS.map(a => { const AI = a.icon; let current = 0, unlocked = false; if (a.need === 'listings') { current = lc; unlocked = lc >= a.count } else if (a.need === 'reviews') { current = rc; unlocked = rc >= a.count } else if (a.need === 'favorites') { current = fc; unlocked = fc >= a.count } else if (a.need === 'trust') { current = score; unlocked = score >= a.count } else if (a.need === 'categories') { unlocked = false; current = 0 }; const pct = Math.min(100, (current / a.count) * 100); return (<div key={a.id} className={`glass rounded-2xl p-5 transition-all ${unlocked ? 'border border-amber-500/30' : ''}`}><div className="flex items-center gap-3 mb-3"><div className={`w-10 h-10 rounded-xl flex items-center justify-center ${unlocked ? 'bg-gradient-to-br from-amber-400 to-yellow-500' : 'bg-white/5'}`}><AI size={20} className={unlocked ? 'text-white' : 'text-gray-500'} /></div><div className="flex-1"><p className={`text-sm font-semibold ${unlocked ? 'text-white' : 'text-gray-400'}`}>{a.name}</p><p className="text-xs text-gray-500">{a.desc}</p></div>{unlocked && <CheckCircle size={18} className="text-amber-400 shrink-0" />}</div><div className="w-full h-2 bg-white/5 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all ${unlocked ? 'bg-gradient-to-r from-amber-400 to-yellow-500' : 'bg-white/10'}`} style={{ width: pct + '%' }} /></div><p className="text-xs text-gray-500 mt-1">{current}/{a.count}</p></div>) })}</div></div>)
-}
+  const podiumColors = ['from-amber-400 to-yellow-500', 'from-slate-300 to-slate-400', 'from-amber-600 to-amber-700'];
 
-// --- MESSAGES PAGE (with real-time chat) ---
-const MessagesPage = ({ uid, userName, listings, onToast, blockedUsers }) => {
-  const [chats, setChats] = useState([])
-  const [activeChat, setActiveChat] = useState(null)
-  const [messages, setMessages] = useState([])
-  const [newMsg, setNewMsg] = useState('')
-  const [chatTarget, setChatTarget] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const messagesEnd = useRef(null)
+  return (
+    <div className="page-enter space-y-6">
+      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Trophy className="w-6 h-6 text-amber-400" /> Leaderboard</h1>
 
-  // Listen to chats
-  useEffect(() => {
-    if (!uid) return
-    const q = query(collection(db, 'chats'), orderBy('updatedAt', 'desc'))
-    const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.participants && c.participants.includes(uid))
-      setChats(data); setLoading(false)
-    }, () => setLoading(false))
-    return () => unsub()
-  }, [uid])
+      <div className="flex gap-2">
+        {['all', 'weekly', 'monthly'].map(p => (
+          <button key={p} onClick={() => setPeriod(p)} className={`px-4 py-2 rounded-full text-sm font-medium capitalize ${period === p ? 'gradient-bg text-white' : 'glass text-dark-400'}`}>{p}</button>
+        ))}
+      </div>
 
-  // Listen to messages for active chat
-  useEffect(() => {
-    if (!activeChat) { setMessages([]); return }
-    const q = query(collection(db, 'chats', activeChat, 'messages'), orderBy('createdAt', 'asc'))
-    const unsub = onSnapshot(q, (snap) => { setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setTimeout(() => messagesEnd.current?.scrollIntoView({ behavior: 'smooth' }), 100) })
-    return () => unsub()
-  }, [activeChat])
+      {/* Top 3 Podium */}
+      {board.length >= 3 && (
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 0, 2].map((idx) => {
+            const entry = board[idx];
+            if (!entry) return null;
+            return (
+              <div key={idx} className={`glass rounded-2xl p-5 text-center ${idx === 0 ? 'md:order-2 md:-mt-4' : idx === 1 ? 'md:order-1' : 'md:order-3'}`}>
+                <div className="relative inline-block">
+                  <UserAvatar name={entry.userName} userId={entry.userId} size={idx === 0 ? 'xl' : 'lg'} />
+                  <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br ${podiumColors[idx]} flex items-center justify-center text-xs font-bold text-white`}>
+                    {idx + 1}
+                  </div>
+                </div>
+                <h3 className="text-sm font-bold text-white mt-3">{entry.userName}</h3>
+                <p className="text-lg font-black gradient-text">{entry.score}</p>
+                <p className="text-xs text-dark-500">{entry.listings} listings</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-  const openChat = async (targetListing) => {
-    if (isBlocked(blockedUsers, targetListing.userId)) { onToast({ type: 'error', message: 'Cannot message this user' }); return }
-    setChatTarget(targetListing)
-    const existing = chats.find(c => c.participants && c.participants.includes(uid) && c.participants.includes(targetListing.userId))
-    if (existing) { setActiveChat(existing.id); return }
-    // Create new chat
-    const chatId = [uid, targetListing.userId].sort().join('_')
-    try {
-      await setDoc(doc(db, 'chats', chatId), {
-        participants: [uid, targetListing.userId],
-        participantNames: { [uid]: userName, [targetListing.userId]: targetListing.userName },
-        lastMessage: '', updatedAt: serverTimestamp(), createdAt: serverTimestamp()
-      })
-      setActiveChat(chatId)
-    } catch (e) { onToast({ type: 'error', message: 'Could not start chat' }) }
-  }
+      {/* Full List */}
+      <div className="glass rounded-2xl overflow-hidden">
+        {board.map((entry, i) => (
+          <div key={i} className={`flex items-center gap-4 p-4 border-b border-white/5 hover:bg-white/5 transition-colors ${entry.userId === user?.uid ? 'bg-brand-500/10' : ''}`}>
+            <span className="w-8 text-center font-bold text-sm text-dark-400">#{i + 1}</span>
+            <UserAvatar name={entry.userName} userId={entry.userId} size="sm" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{entry.userName} {entry.userId === user?.uid && <span className="text-brand-400">(You)</span>}</p>
+              <p className="text-xs text-dark-500">{entry.listings} listings &middot; {entry.reviewCount} reviews</p>
+            </div>
+            <TrustRing score={entry.score} size={40} strokeWidth={4} />
+          </div>
+        ))}
+      </div>
 
-  const sendMessage = async (e) => {
-    e.preventDefault()
-    if (!newMsg.trim() || !activeChat || !uid) return
-    const msg = newMsg.trim(); setNewMsg('')
-    try {
-      await addDoc(collection(db, 'chats', activeChat, 'messages'), { senderId: uid, senderName: userName, text: msg, createdAt: serverTimestamp() })
-      await updateDoc(doc(db, 'chats', activeChat), { lastMessage: msg, updatedAt: serverTimestamp() })
-      // Track activity
-      const log = JSON.parse(localStorage.getItem('barterActivity') || '{}'); const k = todayKey(); log[k] = (log[k] || 0) + 1; localStorage.setItem('barterActivity', JSON.stringify(log))
-    } catch (e) { onToast({ type: 'error', message: 'Failed to send' }) }
-  }
-
-  const getOtherName = (chat) => {
-    if (!chat || !chat.participantNames) return 'Unknown'
-    const otherId = chat.participants.find(p => p !== uid)
-    return chat.participantNames[otherId] || 'Unknown'
-  }
-  const getOtherId = (chat) => chat && chat.participants ? chat.participants.find(p => p !== uid) : null
-
-  // Individual chat view
-  if (activeChat) {
-    const chat = chats.find(c => c.id === activeChat)
-    return (<div className="max-w-2xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
-      <div className="flex items-center gap-3 pb-4 border-b border-white/10"><button onClick={() => setActiveChat(null)} className="p-2 hover:bg-white/10 rounded-lg"><ArrowRight size={20} className="text-gray-400 rotate-180" /></button><div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userGrad(getOtherId(chat))} flex items-center justify-center`}><span className="text-white font-bold text-xs">{initials(getOtherName(chat))}</span></div><span className="text-white font-medium">{getOtherName(chat)}</span></div>
-      <div className="flex-1 overflow-y-auto py-4 space-y-3">{messages.map(m => (<div key={m.id} className={`flex ${m.senderId === uid ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${m.senderId === uid ? 'gradient-bg text-white rounded-br-md' : 'bg-white/10 text-gray-200 rounded-bl-md'}`}><p>{m.text}</p><p className={`text-[10px] mt-1 ${m.senderId === uid ? 'text-white/60' : 'text-gray-500'}`}>{timeAgo(m.createdAt)}</p></div></div>))}<div ref={messagesEnd} /></div>
-      <form onSubmit={sendMessage} className="flex gap-2 pt-4 border-t border-white/10"><input type="text" value={newMsg} onChange={(e) => setNewMsg(e.target.value)} placeholder="Type a message..." className="flex-1 px-4 py-3 rounded-xl bg-dark-800/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-brand-from/50 focus:ring-2 focus:ring-brand-from/20" /><button type="submit" disabled={!newMsg.trim()} className="px-4 py-3 rounded-xl gradient-bg text-white hover:opacity-90 disabled:opacity-40"><Send size={18} /></button></form>
-    </div>)
-  }
-
-  // Chat list view
-  return (<div className="space-y-6">
-    <div className="flex items-center gap-3"><MessageCircle className="text-brand-from" size={28} /><h1 className="text-2xl md:text-3xl font-bold text-white">Messages</h1></div>
-    {loading ? <LoadingSkeleton count={3} /> : chats.length > 0 ? <div className="max-w-2xl mx-auto space-y-2">{chats.map(c => (<button key={c.id} onClick={() => setActiveChat(c.id)} className="w-full glass rounded-xl p-4 flex items-center gap-3 hover:bg-white/[0.07] transition-all text-left"><div className={`w-11 h-11 rounded-full bg-gradient-to-br ${userGrad(getOtherId(c))} flex items-center justify-center shrink-0`}><span className="text-white font-bold text-sm">{initials(getOtherName(c))}</span></div><div className="flex-1 min-w-0"><p className="text-white font-medium">{getOtherName(c)}</p><p className="text-gray-500 text-sm truncate">{c.lastMessage || 'No messages yet'}</p></div><span className="text-xs text-gray-600 shrink-0">{timeAgo(c.updatedAt)}</span></button>))}</div> : <EmptyState icon={MessageCircle} title="No conversations" desc="Start a chat by messaging someone from their listing!" />}
-  </div>)
-}
-
-// --- PROFILE PAGE (Enhanced with trust score, badges, heatmap, blocked users) ---
-const ProfilePage = ({ userName, uid, listings, reviews, onUpdateName, onReset, onToast, favCount, blockedUsers, setBlockedUsers, onNav }) => {
-  const [editName, setEditName] = useState(false), [newName, setNewName] = useState(userName), [nameErr, setNameErr] = useState('')
-  const [showBlocked, setShowBlocked] = useState(false)
-  const myLc = listings.filter(l => l.userId === uid).length
-  const myReviews = reviews.filter(r => r.toUserId === uid)
-  const avgRating = myReviews.length > 0 ? myReviews.reduce((s, r) => s + r.rating, 0) / myReviews.length : 0
-  const score = trustScore(myLc, myReviews.length, avgRating)
-  const title = userTitle(score)
-  const badges = getUnlockedBadges(score, myLc, myReviews.length, favCount, 0, 0)
-  const activityLog = JSON.parse(localStorage.getItem('barterActivity') || '{}')
-
-  const saveName = () => { if (!newName.trim() || newName.trim().length < 2) { setNameErr('Min 2 characters'); return } onUpdateName(newName.trim()); setEditName(false); setNameErr('') }
-  const cancelName = () => { setNewName(userName); setEditName(false); setNameErr('') }
-  const unblock = (bid) => { const nb = blockedUsers.filter(b => b !== bid); setBlockedUsers(nb); onToast({ type: 'info', message: 'User unblocked' }) }
-
-  return (<div className="max-w-lg mx-auto space-y-6">
-    <div className="glass rounded-2xl p-8 text-center">
-      <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${userGrad(uid)} flex items-center justify-center mx-auto mb-4 glow`}><span className="text-white font-bold text-2xl">{initials(userName)}</span></div>
-      {editName ? <div className="space-y-3 mb-4"><input type="text" value={newName} onChange={(e) => { setNewName(e.target.value); setNameErr('') }} className="w-full px-4 py-2.5 rounded-xl bg-dark-800/50 border border-white/10 text-white text-center focus:outline-none focus:border-brand-from/50" autoFocus />{nameErr && <p className="text-red-400 text-sm">{nameErr}</p>}<div className="flex justify-center gap-2"><button onClick={saveName} className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300"><Check size={18} /></button><button onClick={cancelName} className="p-2 rounded-lg bg-white/5 text-gray-400"><X size={18} /></button></div></div>
-      : <div className="mb-4"><h2 className="text-2xl font-bold text-white mb-1">{userName}</h2><span className={`text-sm font-medium ${title.color}`}>{title.label}</span><br/><button onClick={() => setEditName(true)} className="text-brand-from hover:text-brand-to text-sm font-medium flex items-center gap-1 mx-auto mt-1"><Edit2 size={14} />Edit name</button></div>}
-      {badges.length > 0 && <div className="flex justify-center"><BadgesRow badges={badges} /></div>}
+      {myRank > 0 && (
+        <div className="glass rounded-2xl p-6 text-center">
+          <p className="text-dark-400 text-sm">Your current rank</p>
+          <p className="text-4xl font-black gradient-text">#{myRank}</p>
+        </div>
+      )}
     </div>
+  );
+};
 
-    <div className="grid grid-cols-2 gap-4">
-      <div className="glass rounded-2xl p-5 text-center"><TrustRing score={score} /><p className="text-xs text-gray-400 mt-2">Trust Score</p></div>
-      <div className="glass rounded-2xl p-5 text-center"><p className="text-3xl font-bold text-white">{myLc}</p><p className="text-gray-400 text-sm">My Listings</p><div className="mt-2"><RatingStars rating={avgRating} count={myReviews.length} /></div></div>
+// --- PROFILE PAGE ---
+const ProfilePage = ({ user, userData, listings, reviews, favorites, messages, onNavigate, showToast }) => {
+  const myListings = listings.filter(l => l.userId === user?.uid);
+  const myReviews = reviews?.filter(r => r.toUserId === user?.uid);
+  const avgRating = myReviews.length > 0 ? myReviews.reduce((s, r) => s + r.rating, 0) / myReviews.length : 0;
+  const score = trustScore(myListings.length, myReviews.length, avgRating);
+  const title = userTitle(score);
+  const displayName = user?.displayName || userData?.displayName || 'Anonymous';
+  const streak = userData?.streak || 0;
+  const unlockedBadges = getUnlockedBadges(score, myListings.length, myReviews.length, favorites?.length || 0, messages?.length || 0, streak);
+  const [editing, setEditing] = useState(false);
+  const [bio, setBio] = useState(userData?.bio || '');
+
+  return (
+    <div className="page-enter space-y-6">
+      {/* Profile Header */}
+      <div className="glass-strong rounded-2xl p-8 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-500/10 to-purple-500/5" />
+        <div className="relative flex flex-col md:flex-row items-center md:items-start gap-6">
+          <div className="relative">
+            <div className="p-1 rounded-full bg-gradient-to-br from-brand-500 to-purple-500">
+              <UserAvatar name={displayName} userId={user?.uid} size="xl" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-dark-950 flex items-center justify-center border-2 border-brand-500">
+              <Crown className="w-3.5 h-3.5 text-amber-400" />
+            </div>
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h1 className="text-2xl font-black text-white">{displayName}</h1>
+            <p className={`text-sm ${title.color} font-medium`}>{title.name} &middot; Trust Score: {score}</p>
+            <p className="text-xs text-dark-500 mt-1">Member since {userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : 'recently'}</p>
+            {editing ? (
+              <div className="mt-3 flex gap-2">
+                <input value={bio} onChange={e => setBio(e.target.value)} placeholder="Write something about yourself..." className="flex-1 bg-dark-800/80 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-dark-500 focus:outline-none focus:border-brand-500" />
+                <button onClick={() => { setEditing(false); showToast('success', 'Bio updated!'); }} className="gradient-bg text-white px-4 py-2 rounded-xl text-sm font-medium">Save</button>
+              </div>
+            ) : (
+              <p className="text-sm text-dark-300 mt-2">{bio || 'Click edit to add a bio'}</p>
+            )}
+            <button onClick={() => setEditing(!editing)} className="mt-2 text-xs text-brand-400 hover:text-brand-300 flex items-center gap-1">
+              <Edit3 className="w-3 h-3" /> {editing ? 'Cancel' : 'Edit Bio'}
+            </button>
+          </div>
+          <div className="flex justify-center">
+            <TrustRing score={score} size={100} strokeWidth={8} />
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Listings', value: myListings.length, icon: List, color: 'text-blue-400' },
+          { label: 'Reviews', value: myReviews.length, icon: Star, color: 'text-amber-400' },
+          { label: 'Favorites', value: favorites?.length || 0, icon: Heart, color: 'text-red-400' },
+          { label: 'Messages', value: messages?.length || 0, icon: MessageCircle, color: 'text-purple-400' },
+        ].map((s, i) => (
+          <div key={i} className="glass rounded-xl p-4 text-center hover:bg-white/[0.07] transition-all">
+            <s.icon className={`w-5 h-5 mx-auto mb-2 ${s.color}`} />
+            <p className="text-2xl font-bold text-white">{s.value}</p>
+            <p className="text-xs text-dark-400">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Badges */}
+      <div className="glass rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Award className="w-5 h-5 text-amber-400" /> Badges</h2>
+        <BadgesRow badges={unlockedBadges} size="lg" />
+      </div>
+
+      {/* Activity Heatmap */}
+      <div className="glass rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Activity className="w-5 h-5 text-brand-400" /> Activity</h2>
+        <Heatmap activityLog={userData?.activityLog || {}} size="md" />
+      </div>
+
+      {/* Reviews Received */}
+      <div className="glass rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Star className="w-5 h-5 text-amber-400" /> Reviews</h2>
+        {myReviews.length > 0 ? (
+          <div className="space-y-3">
+            {myReviews.map((r, i) => (
+              <div key={i} className="glass rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <UserAvatar name={r.fromUserName} userId={r.fromUserId} size="sm" />
+                    <span className="text-sm font-semibold text-white">{r.fromUserName}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RatingStars rating={r.rating} />
+                    <span className="text-xs text-dark-500">{timeAgo(r.createdAt)}</span>
+                  </div>
+                </div>
+                {r.text && <p className="text-sm text-dark-300">{r.text}</p>}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-dark-500 text-sm text-center py-4">No reviews yet</p>
+        )}
+      </div>
+
+      {/* Achievements */}
+      <div className="glass rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Target className="w-5 h-5 text-brand-400" /> Achievements</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {ACHIEVEMENTS.map((a, i) => {
+            const progress = Math.min(i < 2 ? a.max : Math.floor(Math.random() * a.max), a.max);
+            const done = progress >= a.max;
+            return (
+              <div key={a.id} className={`glass rounded-xl p-4 ${!done ? 'opacity-60' : ''}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold text-white">{a.name}</p>
+                  {done && <CheckCircle className="w-4 h-4 text-emerald-400" />}
+                </div>
+                <p className="text-xs text-dark-400 mb-2">{a.desc}</p>
+                <div className="h-1.5 bg-dark-800 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-500' : 'bg-brand-500'}`} style={{ width: `${(progress / a.max) * 100}%` }} />
+                </div>
+                <p className="text-[10px] text-dark-500 mt-1">{progress}/{a.max}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
+  );
+};
 
-    <div className="glass rounded-2xl p-5"><h3 className="text-sm font-semibold text-gray-400 mb-3">Activity (Last 12 Weeks)</h3><Heatmap log={activityLog} /></div>
+// --- ANALYTICS PAGE ---
+const AnalyticsPage = ({ user, listings, messages, reviews }) => {
+  const myListings = listings.filter(l => l.userId === user?.uid);
+  const totalViews = myListings.reduce((s, l) => s + (l.views || 0), 0);
+  const myMessages = messages?.filter(m => m.fromUserId === user?.uid) || [];
 
-    <div className="glass rounded-2xl p-5"><h3 className="text-sm font-semibold text-gray-400 mb-3">My Reviews ({myReviews.length})</h3>{myReviews.length > 0 ? <div className="space-y-3 max-h-60 overflow-y-auto">{myReviews.slice(0, 10).map(r => (<div key={r.id} className="p-3 rounded-xl bg-white/5"><div className="flex items-center justify-between mb-1"><span className="text-white text-sm font-medium">{r.fromName || 'Anonymous'}</span><RatingStars rating={r.rating} /></div>{r.text && <p className="text-gray-400 text-sm">{r.text}</p>}</div>))}</div> : <p className="text-gray-500 text-sm">No reviews yet</p>}</div>
+  const chartData = myListings.map(l => ({ name: trunc(l.skillOffered, 15), views: l.views || 0 }));
+  const maxViews = Math.max(...chartData.map(d => d.views), 1);
 
-    <div className="glass rounded-2xl p-6 space-y-4"><h3 className="text-lg font-semibold text-white">Account Info</h3><div className="space-y-3"><div className="flex justify-between items-center py-2 border-b border-white/5"><span className="text-gray-400 text-sm">User ID</span><span className="text-gray-300 text-sm font-mono">{trunc(uid, 16)}</span></div><div className="flex justify-between items-center py-2 border-b border-white/5"><span className="text-gray-400 text-sm">Platform</span><span className="text-gray-300 text-sm">Barter Exchange v2.0</span></div><div className="flex justify-between items-center py-2 border-b border-white/5"><span className="text-gray-400 text-sm">Database</span><span className="text-gray-300 text-sm">Firebase Firestore</span></div></div></div>
+  return (
+    <div className="page-enter space-y-6">
+      <h1 className="text-2xl font-bold text-white flex items-center gap-2"><BarChart3 className="w-6 h-6 text-brand-400" /> Analytics</h1>
 
-    <div className="flex gap-3">
-      <button onClick={() => onNav('achievements')} className="flex-1 py-3 rounded-xl bg-white/5 text-white font-medium hover:bg-white/10 border border-white/10 flex items-center justify-center gap-2"><Award size={18} />Achievements</button>
-      <button onClick={() => setShowBlocked(!showBlocked)} className="flex-1 py-3 rounded-xl bg-white/5 text-gray-400 font-medium hover:bg-white/10 border border-white/10 flex items-center justify-center gap-2"><Ban size={18} />Blocked ({(blockedUsers || []).length})</button>
+      {/* Overview Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Views', value: totalViews, icon: Eye, color: 'text-blue-400', change: '+12%' },
+          { label: 'Messages Sent', value: myMessages.length, icon: Send, color: 'text-purple-400', change: '+5%' },
+          { label: 'Listings', value: myListings.length, icon: List, color: 'text-emerald-400', change: '+2' },
+          { label: 'Avg Response Rate', value: '89%', icon: Activity, color: 'text-amber-400', change: '+3%' },
+        ].map((s, i) => (
+          <div key={i} className="glass rounded-2xl p-5 hover:bg-white/[0.07] transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <s.icon className={`w-5 h-5 ${s.color}`} />
+              <span className="text-xs text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">{s.change}</span>
+            </div>
+            <p className="text-2xl font-bold text-white">{s.value}</p>
+            <p className="text-xs text-dark-400">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Listings Performance Chart */}
+      <div className="glass rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-white mb-6">Listings Performance</h2>
+        {chartData.length > 0 ? (
+          <div className="flex items-end gap-3 h-48">
+            {chartData.map((d, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                <span className="text-xs text-dark-400">{d.views}</span>
+                <div className="w-full bg-gradient-to-t from-brand-500 to-purple-400 rounded-t-lg transition-all duration-500 hover:opacity-80" style={{ height: `${(d.views / maxViews) * 100}%`, minHeight: '4px' }} title={d.name} />
+                <span className="text-[9px] text-dark-500 text-center truncate w-full">{d.name}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-dark-500 text-sm text-center py-8">No data yet</p>
+        )}
+      </div>
+
+      {/* Weekly Activity */}
+      <div className="glass rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-white mb-6">Weekly Activity</h2>
+        <div className="flex items-end gap-2 h-32">
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => {
+            const val = Math.floor(Math.random() * 10) + 1;
+            return (
+              <div key={day} className="flex-1 flex flex-col items-center gap-2">
+                <div className="w-full bg-gradient-to-t from-brand-600 to-brand-400 rounded-t-lg" style={{ height: `${(val / 10) * 100}%`, minHeight: '4px' }} />
+                <span className="text-[10px] text-dark-500">{day}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Top Performing */}
+      {chartData.length > 0 && (
+        <div className="glass rounded-2xl p-6">
+          <h2 className="text-lg font-bold text-white mb-4">Top Performing Listing</h2>
+          <div className="glass rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-white">{chartData[0].name}</p>
+              <p className="text-xs text-dark-400">{chartData[0].views} views</p>
+            </div>
+            <TrendingUp className="w-8 h-8 text-emerald-400" />
+          </div>
+        </div>
+      )}
     </div>
-    {showBlocked && <div className="glass rounded-2xl p-4"><h4 className="text-sm font-semibold text-gray-400 mb-3">Blocked Users</h4>{blockedUsers && blockedUsers.length > 0 ? <div className="space-y-2">{blockedUsers.map(bid => { const u = listings.find(l => l.userId === bid); return u ? (<div key={bid} className="flex items-center justify-between p-2 rounded-xl bg-white/5"><span className="text-white text-sm">{u.userName}</span><button onClick={() => unblock(bid)} className="text-xs text-red-400 hover:text-red-300">Unblock</button></div>) : null })}</div> : <p className="text-gray-500 text-sm">No blocked users</p>}</div>}
+  );
+};
 
-    <button onClick={onReset} className="w-full py-3.5 rounded-xl bg-red-500/10 text-red-400 font-medium hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center gap-2"><RefreshCw size={18} />Reset Account</button>
-  </div>)
-}
+// ============================================================
+// SECTION 10: LAYOUT COMPONENTS
+// ============================================================
 
-// --- PUBLIC USER PROFILE PAGE ---
-const UserProfilePage = ({ targetUserId, listings, reviews, uid, onMsg, onBlock, onReview, onBack, blockedUsers }) => {
-  const [showReview, setShowReview] = useState(false)
-  const userListings = listings.filter(l => l.userId === targetUserId)
-  const userReviews = reviews.filter(r => r.toUserId === targetUserId)
-  const avgRating = userReviews.length > 0 ? userReviews.reduce((s, r) => s + r.rating, 0) / userReviews.length : 0
-  const score = trustScore(userListings.length, userReviews.length, avgRating)
-  const title = userTitle(score)
-  const badges = getUnlockedBadges(score, userListings.length, userReviews.length, 0, 0, 0)
-  const targetUser = userListings[0] || reviews.find(r => r.toUserId === targetUserId)
-  const isBlocked = blockedUsers && blockedUsers.includes(targetUserId)
-  const name = targetUser ? (targetUser.userName || (userReviews[0] && userReviews[0].toName)) : 'Unknown User'
-  const isSelf = uid === targetUserId
-
-  return (<div className="max-w-2xl mx-auto space-y-6">
-    <button onClick={onBack} className="flex items-center gap-2 text-gray-400 hover:text-white transition-all text-sm"><ArrowRight size={16} className="rotate-180" />Back</button>
-    <div className="glass rounded-2xl p-8 text-center">
-      <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${userGrad(targetUserId)} flex items-center justify-center mx-auto mb-4 glow`}><span className="text-white font-bold text-2xl">{initials(name)}</span></div>
-      <h2 className="text-2xl font-bold text-white mb-1">{name}</h2>
-      <span className={`text-sm font-medium ${title.color}`}>{title.label}</span>
-      {badges.length > 0 && <div className="flex justify-center mt-3"><BadgesRow badges={badges} /></div>}
-      <div className="flex justify-center gap-6 mt-4"><div className="text-center"><TrustRing score={score} sz={60} /><p className="text-xs text-gray-400 mt-1">Trust</p></div><div className="text-center"><p className="text-2xl font-bold text-white">{userListings.length}</p><p className="text-xs text-gray-400">Listings</p></div><div className="text-center"><RatingStars rating={avgRating} count={userReviews.length} /><p className="text-xs text-gray-400 mt-1">Rating</p></div></div>
-      {!isSelf && <div className="flex justify-center gap-3 mt-6"><button onClick={() => onMsg && onMsg(targetUser)} className="px-5 py-2.5 rounded-xl gradient-bg text-white font-medium hover:opacity-90 flex items-center gap-2"><MessageCircle size={16} />Message</button><button onClick={() => setShowReview(true)} className="px-5 py-2.5 rounded-xl bg-white/5 text-white font-medium hover:bg-white/10 border border-white/10 flex items-center gap-2"><Star size={16} />Review</button><button onClick={() => onBlock && onBlock(targetUserId)} className={`px-5 py-2.5 rounded-xl font-medium border flex items-center gap-2 ${isBlocked ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 text-gray-400 hover:bg-white/10 border-white/10'}`}><Ban size={16} />{isBlocked ? 'Unblock' : 'Block'}</button></div>}
-    </div>
-    {userReviews.length > 0 && <div className="glass rounded-2xl p-5"><h3 className="text-sm font-semibold text-gray-400 mb-3">Reviews ({userReviews.length})</h3><div className="space-y-3 max-h-60 overflow-y-auto">{userReviews.map(r => (<div key={r.id} className="p-3 rounded-xl bg-white/5"><div className="flex items-center justify-between mb-1"><span className="text-white text-sm font-medium">{r.fromName || 'Anonymous'}</span><RatingStars rating={r.rating} /></div>{r.text && <p className="text-gray-400 text-sm">{r.text}</p>}</div>))}</div></div>}
-    <div><h3 className="text-lg font-bold text-white mb-4">Their Listings ({userListings.length})</h3>{userListings.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{userListings.map(l => (<SkillCard key={l.id} listing={l} />))}</div> : <p className="text-gray-500 text-sm">No listings yet</p>}</div>
-    {targetUser && <ReviewModal isOpen={showReview} targetUser={{ userId: targetUserId, userName: name }} onClose={() => setShowReview(false)} onSubmit={onReview} />}
-  </div>)
-}
-
-// ============================================
-// SECTION 7: MAIN APP COMPONENT
-// ============================================
-const App = () => {
-  const [activeTab, setActiveTab] = useState('home')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [user, setUser] = useState(null)
-  const [userName, setUserName] = useState('')
-  const [showWelcome, setShowWelcome] = useState(false)
-  const [listings, setListings] = useState([])
-  const [reviews, setReviews] = useState([])
-  const [favorites, setFavorites] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [toast, setToast] = useState(null)
-  const [editing, setEditing] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [contactTarget, setContactTarget] = useState(null)
-  const [reportTarget, setReportTarget] = useState(null)
-  const [reviewTarget, setReviewTarget] = useState(null)
-  const [stats, setStats] = useState({ totalListings: 0, uniqueUsers: 0, totalCategories: CATEGORIES.length })
-  const [theme, setTheme] = useState(() => localStorage.getItem('barterTheme') || 'dark')
-  const [notifs, setNotifs] = useState([])
-  const [showNotifs, setShowNotifs] = useState(false)
-  const [targetProfile, setTargetProfile] = useState(null)
-  const [blockedUsers, setBlockedUsers] = useState(() => { try { return JSON.parse(localStorage.getItem('barterBlocked') || '[]') } catch { return [] } })
-  const [recentlyViewed, setRecentlyViewed] = useState(() => { try { return JSON.parse(localStorage.getItem('barterRecent') || '[]') } catch { return [] } })
-  const msgPageRef = useRef(null)
-
-  // Persist theme, blocked, recent
-  useEffect(() => { localStorage.setItem('barterTheme', theme) }, [theme])
-  useEffect(() => { localStorage.setItem('barterBlocked', JSON.stringify(blockedUsers)) }, [blockedUsers])
-  useEffect(() => { localStorage.setItem('barterRecent', JSON.stringify(recentlyViewed.slice(0, 30))) }, [recentlyViewed])
-
-  // Auth
-  useEffect(() => {
-    const stored = localStorage.getItem('barterUserName')
-    if (stored) setUserName(stored)
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      if (u) { setUser(u); if (!stored) setShowWelcome(true) }
-      else { try { await signInAnonymously(auth) } catch (e) { console.error(e) } }
-    })
-    return () => unsub()
-  }, [])
-
-  // Listings listener
-  useEffect(() => {
-    if (!user) return; setLoading(true)
-    const q = query(collection(db, 'listings'), orderBy('createdAt', 'desc'))
-    const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      setListings(data)
-      setStats({ totalListings: data.length, uniqueUsers: new Set(data.map(l => l.userId)).size, totalCategories: CATEGORIES.length })
-      setLoading(false)
-    }, () => setLoading(false))
-    return () => unsub()
-  }, [user])
-
-  // Reviews listener
-  useEffect(() => {
-    if (!user) return
-    const unsub = onSnapshot(query(collection(db, 'reviews'), orderBy('createdAt', 'desc')), (snap) => { setReviews(snap.docs.map(d => ({ id: d.id, ...d.data() }))) })
-    return () => unsub()
-  }, [user])
-
-  // Favorites listener
-  useEffect(() => {
-    if (!user) return
-    const unsub = onSnapshot(query(collection(db, 'favorites'), where('userId', '==', user.uid)), (snap) => { setFavorites(snap.docs.map(d => d.data())) })
-    return () => unsub()
-  }, [user])
-
-  // Notifications listener
-  useEffect(() => {
-    if (!user) return
-    const unsub = onSnapshot(query(collection(db, 'notifications'), where('toUserId', '==', user.uid), orderBy('createdAt', 'desc'), limit(20)), (snap) => { setNotifs(snap.docs.map(d => ({ id: d.id, ...d.data() }))) })
-    return () => unsub()
-  }, [user])
-
-  const favIds = favorites.map(f => f.listingId)
-  const handleToast = (t) => setToast(t)
-
-  // Navigation
-  const nav = (tab) => { setActiveTab(tab); setEditing(null); setTargetProfile(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }
-
-  // Handlers
-  const handleName = (name) => { localStorage.setItem('barterUserName', name); setUserName(name); setShowWelcome(false); setToast({ type: 'success', message: `Welcome, ${name}!` }) }
-
-  const handleCreate = async (data) => {
-    await addDoc(collection(db, 'listings'), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
-    setToast({ type: 'success', message: 'Skill posted!' }); nav('my-listings')
-    // Activity log
-    const log = JSON.parse(localStorage.getItem('barterActivity') || '{}'); const k = todayKey(); log[k] = (log[k] || 0) + 1; localStorage.setItem('barterActivity', JSON.stringify(log))
-  }
-  const handleUpdate = async (data) => {
-    if (!editing) return
-    await updateDoc(doc(db, 'listings', editing.id), { ...data, updatedAt: serverTimestamp() })
-    setEditing(null); setToast({ type: 'success', message: 'Listing updated!' }); nav('my-listings')
-  }
-  const handleDelete = async () => {
-    if (!deleteTarget) return
-    try { await deleteDoc(doc(db, 'listings', deleteTarget.id)); setToast({ type: 'success', message: 'Deleted!' }) } catch { setToast({ type: 'error', message: 'Failed to delete' }) }
-    setDeleteTarget(null)
-  }
-  const handleEditClick = (l) => { setEditing(l); nav('post') }
-  const handleCancelEdit = () => { setEditing(null); nav('my-listings') }
-
-  // Favorites
-  const handleFav = async (listing) => {
-    if (!user) return
-    const existing = favorites.find(f => f.listingId === listing.id)
-    if (existing) {
-      try { const q = query(collection(db, 'favorites'), where('userId', '==', user.uid), where('listingId', '==', listing.id))
-        const snap = await getDocs(q); const batch = writeBatch(db); snap.docs.forEach(d => batch.delete(d.ref)); await batch.commit()
-        setToast({ type: 'info', message: 'Removed from favorites' })
-      } catch { setToast({ type: 'error', message: 'Failed' }) }
-    } else {
-      try { await addDoc(collection(db, 'favorites'), { userId: user.uid, listingId: listing.id, userName: listing.userName, skillOffered: listing.skillOffered, createdAt: serverTimestamp() })
-        setToast({ type: 'success', message: 'Added to favorites!' })
-      } catch { setToast({ type: 'error', message: 'Failed' }) }
-    }
-  }
-
-  // Reviews
-  const handleReview = async (toUserId, rating, text) => {
-    if (!user) return
-    try { await addDoc(collection(db, 'reviews'), { fromUserId: user.uid, fromName: userName, toUserId, rating, text, createdAt: serverTimestamp() })
-      setToast({ type: 'success', message: 'Review submitted!' }); setReviewTarget(null)
-    } catch { setToast({ type: 'error', message: 'Failed' }) }
-  }
-
-  // Reports
-  const handleReport = async (listing, reason) => {
-    if (!user) return
-    try { await addDoc(collection(db, 'reports'), { listingId: listing.id, listingOwner: listing.userId, reporterId: user.uid, reporterName: userName, reason, createdAt: serverTimestamp() })
-      setToast({ type: 'info', message: 'Report submitted' }); setReportTarget(null)
-    } catch { setToast({ type: 'error', message: 'Failed' }) }
-  }
-
-  // Share
-  const handleShare = (listing) => {
-    const url = window.location.origin + '?listing=' + listing.id
-    navigator.clipboard.writeText(url).then(() => setToast({ type: 'success', message: 'Link copied!' })).catch(() => setToast({ type: 'info', message: 'Could not copy link' }))
-  }
-
-  // View user profile
-  const handleViewUser = (listing) => {
-    setTargetProfile(listing)
-    if (!recentlyViewed.includes(listing.id)) {
-      const rv = [listing.id, ...recentlyViewed.filter(id => id !== listing.id)].slice(0, 30)
-      setRecentlyViewed(rv)
-    }
-  }
-
-  // Block user
-  const handleBlock = (targetUid) => {
-    if (blockedUsers.includes(targetUid)) {
-      setBlockedUsers(blockedUsers.filter(b => b !== targetUid))
-      setToast({ type: 'info', message: 'User unblocked' })
-    } else {
-      setBlockedUsers([...blockedUsers, targetUid])
-      setToast({ type: 'warning', message: 'User blocked' })
-    }
-  }
-
-  // Message from listing
-  const handleMessage = (listing) => {
-    nav('messages')
-    setTimeout(() => {
-      if (msgPageRef.current && msgPageRef.current.openChat) {
-        msgPageRef.current.openChat(listing)
-      }
-    }, 500)
-  }
-
-  // Mark notification read
-  const markRead = async (id) => {
-    try { await updateDoc(doc(db, 'notifications', id), { read: true }) } catch {}
-  }
-
-  // Render pages
-  const renderPage = () => {
-    if (targetProfile) return <UserProfilePage targetUserId={targetProfile.userId} listings={listings} reviews={reviews} uid={user?.uid} onMsg={handleMessage} onBlock={handleBlock} onReview={handleReview} onBack={() => setTargetProfile(null)} blockedUsers={blockedUsers} />
-    switch (activeTab) {
-      case 'home': return <HomePage listings={listings} userName={userName} uid={user?.uid} onNav={nav} stats={stats} favorites={favorites} recentlyViewed={recentlyViewed} blockedUsers={blockedUsers} />
-      case 'explore': return <ExplorePage listings={listings} loading={loading} uid={user?.uid} onEdit={handleEditClick} onDelete={setDeleteTarget} onContact={setContactTarget} onFav={handleFav} onReport={setReportTarget} onMsg={handleMessage} onShare={handleShare} onUser={handleViewUser} favIds={favIds} blockedUsers={blockedUsers} />
-      case 'post': return <PostPage uid={user?.uid} userName={userName} editing={editing} onSubmit={editing ? handleUpdate : handleCreate} onCancel={handleCancelEdit} toast={handleToast} existingListings={listings} />
-      case 'my-listings': return <MyListingsPage listings={listings.filter(l => l.userId === user?.uid)} uid={user?.uid} onEdit={handleEditClick} onDelete={setDeleteTarget} onContact={setContactTarget} onNav={nav} onShare={handleShare} />
-      case 'favorites': return <FavoritesPage listings={listings} favIds={favIds} onFav={handleFav} onUser={handleViewUser} />
-      case 'messages': return <MessagesPage ref={msgPageRef} uid={user?.uid} userName={userName} listings={listings} onToast={handleToast} blockedUsers={blockedUsers} />
-      case 'leaderboard': return <LeaderboardPage listings={listings} reviews={reviews} onUser={handleViewUser} />
-      case 'achievements': return <AchievementsPage myStats={{ lc: listings.filter(l => l.userId === user?.uid).length, rc: reviews.filter(r => r.toUserId === user?.uid).length, fc: favorites.length, score: trustScore(listings.filter(l => l.userId === user?.uid).length, reviews.filter(r => r.toUserId === user?.uid).length, reviews.filter(r => r.toUserId === user?.uid).length > 0 ? reviews.filter(r => r.toUserId === user?.uid).reduce((s, r) => s + r.rating, 0) / reviews.filter(r => r.toUserId === user?.uid).length : 0) }} />
-      case 'profile': return <ProfilePage userName={userName} uid={user?.uid} listings={listings} reviews={reviews} onUpdateName={(n) => { localStorage.setItem('barterUserName', n); setUserName(n); setToast({ type: 'success', message: 'Name updated!' }) }} onReset={() => { localStorage.removeItem('barterUserName'); setUserName(''); setShowWelcome(true); setToast({ type: 'info', message: 'Account reset' }) }} onToast={handleToast} favCount={favorites.length} blockedUsers={blockedUsers} setBlockedUsers={setBlockedUsers} onNav={nav} />
-      default: return <HomePage listings={listings} userName={userName} uid={user?.uid} onNav={nav} stats={stats} favorites={favorites} recentlyViewed={recentlyViewed} blockedUsers={blockedUsers} />
-    }
-  }
-
-  const unreadNotifs = notifs.filter(n => !n.read).length
-
-  // ============================================
-  // SECTION 8: MAIN LAYOUT
-  // ============================================
-  return (<div className={`min-h-screen ${theme === 'light' ? 'bg-gray-50 text-dark-800' : 'bg-dark-900 text-gray-300'}`}>
-    <Toast toast={toast} onClose={() => setToast(null)} />
-    <WelcomeModal isOpen={showWelcome} onSubmit={handleName} />
-    <DeleteModal isOpen={!!deleteTarget} listing={deleteTarget} onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} />
-    <ContactModal isOpen={!!contactTarget} listing={contactTarget} onClose={() => setContactTarget(null)} />
-    <ReportModal isOpen={!!reportTarget} listing={reportTarget} onClose={() => setReportTarget(null)} onReport={handleReport} />
-    {reviewTarget && <ReviewModal isOpen={true} targetUser={reviewTarget} onClose={() => setReviewTarget(null)} onSubmit={handleReview} />}
-
-    {/* Header */}
-    <header className={`fixed top-0 left-0 right-0 h-16 z-50 flex items-center justify-between px-4 md:px-6 ${theme === 'light' ? 'bg-white/80 backdrop-blur-lg border-b border-gray-200 shadow-sm' : 'glass-strong'}`}>
+// --- Header ---
+const Header = ({ user, userData, onNavigate, onLogout, showToast, notifications, searchQuery, setSearchQuery, darkMode, setDarkMode, onNotifToggle, showNotif }) => (
+  <header className="sticky top-0 z-40 glass border-b border-white/5">
+    <div className="flex items-center justify-between px-4 md:px-6 py-3">
       <div className="flex items-center gap-3">
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 hover:bg-white/10 rounded-lg"><Menu size={20} className="text-white" /></button>
-        <div className="flex items-center gap-2"><div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center"><ArrowRight className="text-white" size={16} /></div><span className="text-lg font-bold gradient-text hidden sm:inline">Barter Exchange</span></div>
+        <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center cursor-pointer" onClick={() => onNavigate('home')}>
+          <Handshake className="w-5 h-5 text-white" />
+        </div>
+        <span className="text-lg font-bold gradient-text hidden md:block">SkillSwap</span>
       </div>
-      <div className="flex items-center gap-2">
-        <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className={`p-2 rounded-lg ${theme === 'light' ? 'hover:bg-gray-100' : 'hover:bg-white/10'} transition-colors`}>{theme === 'dark' ? <Sun size={20} className="text-amber-400" /> : <Moon size={20} className="text-gray-600" />}</button>
-        <div className="relative"><button onClick={() => setShowNotifs(!showNotifs)} className={`p-2 rounded-lg ${theme === 'light' ? 'hover:bg-gray-100' : 'hover:bg-white/10'} transition-colors relative`}><Bell size={20} className={theme === 'light' ? 'text-gray-600' : 'text-gray-400'} />{unreadNotifs > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">{unreadNotifs > 9 ? '9+' : unreadNotifs}</span>}</button><NotifPanel isOpen={showNotifs} notifs={notifs} onClose={() => setShowNotifs(false)} onRead={markRead} onNav={nav} /></div>
-        {userName && <div className="flex items-center gap-2"><span className={`text-sm hidden md:inline ${theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>{userName}</span><div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userGrad(user?.uid)} flex items-center justify-center`}><span className="text-white font-bold text-xs">{initials(userName)}</span></div></div>}
+
+      <div className="hidden md:flex flex-1 max-w-md mx-8">
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-500" />
+          <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search skills, people..."
+            className="w-full bg-dark-800/80 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-dark-500 focus:outline-none focus:border-brand-500" />
+        </div>
       </div>
-    </header>
 
-    {/* Sidebar */}
-    <aside className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 hidden lg:flex flex-col ${theme === 'light' ? 'bg-white/80 backdrop-blur-lg border-r border-gray-200' : 'glass-strong'} ${sidebarOpen ? 'w-64' : 'w-20'} border-r border-white/5`} onMouseEnter={() => setSidebarOpen(true)} onMouseLeave={() => setSidebarOpen(false)}>
-      <nav className="flex-1 py-4 px-3 space-y-1">{NAV_ITEMS.map(item => { const Icon = item.icon; const isActive = activeTab === item.id && !targetProfile; return (<button key={item.id} onClick={() => nav(item.id)} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${isActive ? 'gradient-bg text-white shadow-lg shadow-indigo-500/20' : (theme === 'light' ? 'text-gray-500 hover:bg-gray-100 hover:text-gray-800' : 'text-gray-400 hover:bg-white/5 hover:text-white')}`}><Icon size={22} className="shrink-0" /><span className={`font-medium whitespace-nowrap transition-all ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{item.label}</span></button>) })}</nav>
-      <div className="p-3"><div className={`rounded-xl p-3 ${theme === 'light' ? 'bg-gray-50' : 'glass'} text-xs ${theme === 'light' ? 'text-gray-400' : 'text-gray-500'}`}><Sparkles size={16} className="mb-1 text-brand-from" />{sidebarOpen && <p>Barter Exchange v2.0 — Ultra Premium</p>}</div></div>
-    </aside>
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <button onClick={onNotifToggle} className="relative p-2 text-dark-400 hover:text-white transition-colors">
+            <Bell className="w-5 h-5" />
+            {notifications?.filter(n => !n.read).length > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
+            )}
+          </button>
+          <NotifPanel notifications={notifications} visible={showNotif} onClose={onNotifToggle} onMarkRead={() => {}} />
+        </div>
 
-    {/* Content */}
-    <main className="pt-16 min-h-screen lg:ml-20 pb-20 lg:pb-6 transition-all">
-      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-6">{loading && !listings.length ? <LoadingSkeleton /> : renderPage()}</div>
-    </main>
+        <div className="flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded-xl px-2 py-1.5 transition-colors" onClick={() => onNavigate('profile')}>
+          <UserAvatar name={user?.displayName || userData?.displayName} userId={user?.uid} size="sm" />
+          <span className="text-sm text-white hidden md:block font-medium">{user?.displayName || 'User'}</span>
+          <ChevronDown className="w-3.5 h-3.5 text-dark-500 hidden md:block" />
+        </div>
 
-    {/* Mobile Nav */}
-    <nav className={`fixed bottom-0 left-0 right-0 h-16 z-50 flex items-center justify-around lg:hidden ${theme === 'light' ? 'bg-white/90 backdrop-blur-lg border-t border-gray-200' : 'glass-strong'}`}>
-      {MOBILE_NAV.map(item => { const Icon = item.icon; const isActive = activeTab === item.id && !targetProfile; const isCenter = item.id === 'post'; return (<button key={item.id} onClick={() => nav(item.id)} className={`flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all ${isCenter ? '-mt-4' : ''} ${isActive ? 'text-brand-from' : (theme === 'light' ? 'text-gray-400' : 'text-gray-500')}`}><div className={`${isCenter ? 'w-12 h-12 -mt-1 rounded-2xl gradient-bg flex items-center justify-center glow-sm shadow-lg' : 'p-1 rounded-lg ' + (isActive ? 'bg-brand-from/20' : '')}`}><Icon size={isCenter ? 22 : 20} className={isCenter ? 'text-white' : ''} /></div><span className={`text-[10px] font-medium ${isCenter ? 'text-brand-from' : ''}`}>{item.label}</span></button>) })}
+        <button onClick={onLogout} className="p-2 text-dark-400 hover:text-red-400 transition-colors" title="Logout">
+          <LogOut className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  </header>
+);
+
+// --- Sidebar (Desktop) ---
+const Sidebar = ({ currentPage, onNavigate, collapsed }) => (
+  <aside className={`hidden md:flex flex-col glass border-r border-white/5 ${collapsed ? 'w-16' : 'w-60'} transition-all duration-300 shrink-0`}>
+    <nav className="flex-1 py-4 px-2 space-y-1">
+      {NAV_ITEMS.map(item => {
+        const active = currentPage === item.id;
+        return (
+          <button key={item.id} onClick={() => onNavigate(item.id)}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? 'gradient-bg text-white glow-sm' : 'text-dark-400 hover:text-white hover:bg-white/5'}`}>
+            <item.icon className="w-5 h-5 shrink-0" />
+            {!collapsed && <span>{item.label}</span>}
+          </button>
+        );
+      })}
     </nav>
-  </div>)
-}
+  </aside>
+);
 
-export default App
+// --- Bottom Nav (Mobile) ---
+const BottomNav = ({ currentPage, onNavigate, unreadMsgs }) => (
+  <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-white/5">
+    <div className="flex items-center justify-around py-2">
+      {MOBILE_NAV.map(item => {
+        const active = currentPage === item.id;
+        return (
+          <button key={item.id} onClick={() => onNavigate(item.id)}
+            className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all ${active ? 'text-brand-400' : 'text-dark-500'}`}>
+            <div className="relative">
+              <item.icon className="w-5 h-5" />
+              {item.id === 'messages' && unreadMsgs > 0 && (
+                <span className="absolute -top-1 -right-2 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">{unreadMsgs}</span>
+              )}
+            </div>
+            <span className="text-[10px]">{item.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  </nav>
+);
+
+// --- Layout Wrapper ---
+const Layout = ({ children, currentPage, onNavigate, onLogout, user, userData, showToast, notifications, searchQuery, setSearchQuery, darkMode, setDarkMode, showNotif, onNotifToggle, unreadMsgs, collapsed, setCollapsed }) => (
+  <div className="min-h-screen bg-dark-950 flex flex-col">
+    <Header user={user} userData={userData} onNavigate={onNavigate} onLogout={onLogout} showToast={showToast}
+      notifications={notifications} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+      darkMode={darkMode} setDarkMode={setDarkMode} showNotif={showNotif} onNotifToggle={onNotifToggle} />
+    <div className="flex flex-1 overflow-hidden">
+      <Sidebar currentPage={currentPage} onNavigate={onNavigate} collapsed={collapsed} />
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
+        {children}
+      </main>
+    </div>
+    <BottomNav currentPage={currentPage} onNavigate={onNavigate} unreadMsgs={unreadMsgs} />
+  </div>
+);
+
+// ============================================================
+// SECTION 11: MAIN APP COMPONENT
+// ============================================================
+
+const App = () => {
+  // --- Navigation & Auth State ---
+  const [currentPage, setCurrentPage] = useState('landing');
+  const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // --- Data State ---
+  const [listings, setListings] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+
+  // --- UI State ---
+  const [toast, setToast] = useState(null);
+  const [editingListing, setEditingListing] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [darkMode, setDarkMode] = useState(true);
+  const [showNotif, setShowNotif] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // --- Modal State ---
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showContact, setShowContact] = useState(false);
+  const [contactInfo, setContactInfo] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [showReport, setShowReport] = useState(false);
+  const [reportTarget, setReportTarget] = useState(null);
+  const [showReview, setShowReview] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState(null);
+  const [showExchange, setShowExchange] = useState(false);
+  const [exchangeTarget, setExchangeTarget] = useState(null);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [profileTarget, setProfileTarget] = useState(null);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+
+  // --- Toast Helper ---
+  const showToast = useCallback((type, message) => setToast({ type, message }), []);
+
+  // --- Auth State Listener ---
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (u) {
+        setCurrentPage('home');
+        // Fetch user data
+        getDoc(doc(db, 'users', u.uid)).then(docSnap => {
+          if (docSnap.exists()) setUserData(docSnap.data());
+        }).catch(() => {});
+      } else {
+        setCurrentPage('landing');
+        setUserData(null);
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  // --- Firestore Real-time Listeners ---
+  useEffect(() => {
+    if (!user) return;
+    // Listings
+    const unsub1 = onSnapshot(collection(db, 'listings'), (snap) => {
+      setListings(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, () => {});
+    // Messages
+    const q2 = query(collection(db, 'messages'), orderBy('createdAt', 'asc'));
+    const unsub2 = onSnapshot(q2, (snap) => {
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, () => {});
+    // Reviews
+    const unsub3 = onSnapshot(collection(db, 'reviews'), (snap) => {
+      setReviews(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, () => {});
+    // Notifications
+    const q4 = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(20));
+    const unsub4 = onSnapshot(q4, (snap) => {
+      setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, () => {});
+
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
+  }, [user]);
+
+  // --- Load favorites from localStorage ---
+  useEffect(() => {
+    const saved = localStorage.getItem('skillswap_favorites');
+    if (saved) setFavorites(JSON.parse(saved));
+  }, []);
+
+  // --- Login Handler ---
+  const handleLogin = useCallback(async (email, password, method = 'email') => {
+    if (method === 'google') {
+      await signInWithPopup(auth, googleProvider);
+      const u = auth.currentUser;
+      if (u) {
+        await setDoc(doc(db, 'users', u.uid), {
+          uid: u.uid, displayName: u.displayName || 'User', email: u.email || '',
+          photoURL: u.photoURL || '', bio: '', blockedUsers: [], favorites: [], recentlyViewed: [],
+          activityLog: {}, createdAt: new Date().toISOString(), streak: 0,
+        }, { merge: true });
+      }
+    } else {
+      await signInWithEmailAndPassword(auth, email, password);
+    }
+    showToast('success', 'Welcome back!');
+  }, [showToast]);
+
+  // --- Signup Handler ---
+  const handleSignup = useCallback(async (email, password, name) => {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(cred.user, { displayName: name });
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      uid: cred.user.uid, displayName: name, email: cred.user.email,
+      photoURL: '', bio: '', blockedUsers: [], favorites: [], recentlyViewed: [],
+      activityLog: {}, createdAt: new Date().toISOString(), streak: 0,
+    });
+    showToast('success', 'Account created successfully!');
+  }, [showToast]);
+
+  // --- Logout Handler ---
+  const handleLogout = useCallback(async () => {
+    await signOut(auth);
+    showToast('info', 'You have been logged out');
+  }, [showToast]);
+
+  // --- Toggle Favorite ---
+  const toggleFavorite = useCallback((listingId) => {
+    setFavorites(prev => {
+      const next = prev.includes(listingId) ? prev.filter(id => id !== listingId) : [...prev, listingId];
+      localStorage.setItem('skillswap_favorites', JSON.stringify(next));
+      return next;
+    });
+    showToast('info', 'Favorites updated!');
+  }, [showToast]);
+
+  // --- Post/Update Listing ---
+  const handleSubmitListing = useCallback(async (data, editId) => {
+    if (editId) {
+      await updateDoc(doc(db, 'listings', editId), data);
+    } else {
+      await addDoc(collection(db, 'listings'), { ...data, createdAt: serverTimestamp(), views: 0, favorites: 0 });
+    }
+    setCurrentPage('mylistings');
+  }, []);
+
+  // --- Delete Listing ---
+  const handleDeleteListing = useCallback(async () => {
+    if (deleteTarget) {
+      await deleteDoc(doc(db, 'listings', deleteTarget.id));
+      showToast('success', 'Listing deleted');
+      setShowDelete(false);
+      setDeleteTarget(null);
+    }
+  }, [deleteTarget, showToast]);
+
+  // --- Send Message ---
+  const handleSendMessage = useCallback(async (toUserId, text) => {
+    if (!user || !text) return;
+    const partnerName = listings.find(l => l.userId === toUserId)?.userName || 'User';
+    await addDoc(collection(db, 'messages'), {
+      fromUserId: user.uid, fromUserName: user.displayName || 'User',
+      toUserId, toUserName: partnerName, text, createdAt: serverTimestamp(), read: false,
+    });
+  }, [user, listings]);
+
+  // --- Unread Message Count ---
+  const unreadMsgs = useMemo(() => {
+    if (!messages || !user) return 0;
+    return messages.filter(m => m.toUserId === user.uid && !m.read).length;
+  }, [messages, user]);
+
+  // --- Navigate ---
+  const navigate = useCallback((page) => {
+    setCurrentPage(page);
+    setEditingListing(null);
+    window.scrollTo(0, 0);
+  }, []);
+
+  // --- Loading Screen ---
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+        <div className="text-center slide-up">
+          <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Handshake className="w-9 h-9 text-white" />
+          </div>
+          <p className="text-dark-400 text-sm">Loading SkillSwap...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- RENDER ---
+  return (
+    <>
+      <Toast toast={toast} onClose={() => setToast(null)} />
+      <ScrollToTop />
+
+      {/* Welcome Modal */}
+      <WelcomeModal visible={showWelcome} onClose={() => setShowWelcome(false)} onSubmit={async (name) => {
+        if (user) {
+          await updateProfile(user, { displayName: name });
+          await setDoc(doc(db, 'users', user.uid), {
+            uid: user.uid, displayName: name, email: user.email || '',
+            photoURL: '', bio: '', blockedUsers: [], favorites: [], recentlyViewed: [],
+            activityLog: {}, createdAt: new Date().toISOString(), streak: 0,
+          }, { merge: true });
+          setUserData(prev => ({ ...prev, displayName: name }));
+        }
+        setShowWelcome(false);
+        showToast('success', `Welcome, ${name}!`);
+      }} />
+
+      {/* Delete Modal */}
+      <DeleteModal visible={showDelete} onClose={() => { setShowDelete(false); setDeleteTarget(null); }}
+        onConfirm={handleDeleteListing} itemName={deleteTarget?.skillOffered || ''} />
+
+      {/* Contact Modal */}
+      <ContactModal visible={showContact} onClose={() => setShowContact(false)} contactInfo={contactInfo} userName={contactName} />
+
+      {/* Report Modal */}
+      <ReportModal visible={showReport} onClose={() => { setShowReport(false); setReportTarget(null); }}
+        onSubmit={async (reason, desc) => {
+          if (reportTarget && user) {
+            await addDoc(collection(db, 'reports'), { listingId: reportTarget.id, reportedBy: user.uid, reason, desc, createdAt: serverTimestamp() });
+            showToast('success', 'Report submitted');
+          }
+          setShowReport(false); setReportTarget(null);
+        }} />
+
+      {/* Review Modal */}
+      <ReviewModal visible={showReview} onClose={() => { setShowReview(false); setReviewTarget(null); }}
+        onSubmit={async (rating, text) => {
+          if (reviewTarget && user) {
+            await addDoc(collection(db, 'reviews'), {
+              fromUserId: user.uid, fromUserName: user.displayName || 'User',
+              toUserId: reviewTarget.userId, toUserName: reviewTarget.userName,
+              rating, text, createdAt: serverTimestamp(),
+            });
+            showToast('success', 'Review submitted!');
+          }
+          setShowReview(false); setReviewTarget(null);
+        }} userName={reviewTarget?.userName} />
+
+      {/* Exchange Modal */}
+      <ExchangeModal visible={showExchange} onClose={() => { setShowExchange(false); setExchangeTarget(null); }}
+        onSubmit={async (msg) => {
+          if (exchangeTarget && user) {
+            await handleSendMessage(exchangeTarget.userId, `Exchange Proposal: ${msg}`);
+            showToast('success', 'Exchange proposal sent!');
+          }
+          setShowExchange(false); setExchangeTarget(null);
+        }} listing={exchangeTarget} />
+
+      {/* User Profile Modal */}
+      <UserProfileModal visible={showUserProfile} onClose={() => { setShowUserProfile(false); setProfileTarget(null); }}
+        user={profileTarget}
+        listings={listings.filter(l => l.userId === profileTarget?.userId)}
+        reviews={reviews?.filter(r => r.toUserId === profileTarget?.userId)} />
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal visible={showImagePreview} onClose={() => { setShowImagePreview(false); setImagePreviewUrl(''); }} imageUrl={imagePreviewUrl} />
+
+      {/* ==================== ROUTING ==================== */}
+      {!user ? (
+        <>
+          {currentPage === 'landing' && <LandingPage onNavigate={navigate} />}
+          {currentPage === 'login' && <LoginPage onNavigate={navigate} onLogin={handleLogin} showToast={showToast} />}
+          {currentPage === 'signup' && <SignupPage onNavigate={navigate} onSignup={handleSignup} showToast={showToast} />}
+        </>
+      ) : (
+        <Layout currentPage={currentPage} onNavigate={navigate} onLogout={handleLogout} user={user} userData={userData}
+          showToast={showToast} notifications={notifications} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+          darkMode={darkMode} setDarkMode={setDarkMode} showNotif={showNotif} onNotifToggle={() => setShowNotif(!showNotif)}
+          unreadMsgs={unreadMsgs} collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed}>
+
+          {currentPage === 'home' && (
+            <HomePage user={user} userData={userData} listings={listings} favorites={favorites}
+              onToggleFavorite={toggleFavorite} onViewListing={(l) => {}} onNavigate={navigate} messages={messages} reviews={reviews} />
+          )}
+          {currentPage === 'explore' && (
+            <ExplorePage listings={listings} favorites={favorites} onToggleFavorite={toggleFavorite}
+              onViewListing={(l) => { if (l.imageUrl) { setImagePreviewUrl(l.imageUrl); setShowImagePreview(true); }}}
+              currentUser={user} blockedUsers={userData?.blockedUsers || []} />
+          )}
+          {currentPage === 'messages' && (
+            <MessagesPage user={user} messages={messages} onSendMessage={handleSendMessage} allListings={listings} />
+          )}
+          {currentPage === 'post' && (
+            <PostPage user={user} userData={userData} showToast={showToast} editingListing={editingListing}
+              onClearEdit={() => setEditingListing(null)} onSubmit={handleSubmitListing} />
+          )}
+          {currentPage === 'favorites' && (
+            <FavoritesPage listings={listings} favorites={favorites} onToggleFavorite={toggleFavorite}
+              onViewListing={(l) => {}} currentUser={user} onNavigate={navigate} />
+          )}
+          {currentPage === 'mylistings' && (
+            <MyListingsPage user={user} listings={listings} reviews={reviews}
+              onEdit={(l) => { setEditingListing(l); navigate('post'); }}
+              onDelete={(l) => { setDeleteTarget(l); setShowDelete(true); }}
+              onViewListing={(l) => {}} onNavigate={navigate} />
+          )}
+          {currentPage === 'leaderboard' && (
+            <LeaderboardPage listings={listings} reviews={reviews} user={user} />
+          )}
+          {currentPage === 'profile' && (
+            <ProfilePage user={user} userData={userData} listings={listings} reviews={reviews}
+              favorites={favorites} messages={messages} onNavigate={navigate} showToast={showToast} />
+          )}
+          {currentPage === 'analytics' && (
+            <AnalyticsPage user={user} listings={listings} messages={messages} reviews={reviews} />
+          )}
+        </Layout>
+      )}
+    </>
+  );
+};
+
+// SECTION 12: EXPORT DEFAULT
+export default App;

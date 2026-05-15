@@ -14,7 +14,8 @@ import {
   Gift, Crown, Sparkles, Target, Calendar, MoreVertical,
   MessageSquare, BookOpen, Briefcase, Music, Code, Palette,
   Dumbbell, ChefHat, Languages, Lightbulb, Smartphone, Wrench,
-  HeartHandshake, ArrowRight, PlayCircle, Download, UploadCloud
+  HeartHandshake, ArrowRight, PlayCircle, Download, UploadCloud,
+  HelpCircle, Volume2, Mail, ChevronUp, Keyboard, UserMinus
 } from "lucide-react";
 import { initializeApp } from "firebase/app";
 import {
@@ -483,12 +484,12 @@ const ScrollToTop = ({ show }) => {
 };
 
 // --- Skill Card ---
-const SkillCard = ({ listing, onFavorite, isFavorited, onContact, onReport, onMessage, currentUserId, blockedUsers, onViewProfile }) => {
+const SkillCard = ({ listing, onFavorite, isFavorited, onContact, onReport, onMessage, currentUserId, blockedUsers, onViewProfile, onShare, onExchange, onViewListing }) => {
   const cat = getCat(listing.category);
   const CatIcon = cat.icon;
   if (isBlocked(blockedUsers, listing.userId)) return null;
   return (
-    <div className="glass rounded-2xl p-5 hover:bg-white/[0.07] transition-all duration-300 group border border-white/5 hover:border-white/15 relative overflow-hidden">
+    <div onClick={() => onViewListing?.(listing)} className="cursor-pointer glass rounded-2xl p-5 hover:bg-white/[0.07] transition-all duration-300 group border border-white/5 hover:border-white/15 relative overflow-hidden">
       <div className={`absolute top-0 right-0 w-24 h-24 rounded-full bg-gradient-to-br ${cat.color} opacity-5 group-hover:opacity-10 transition-opacity -translate-y-8 translate-x-8`} />
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2.5">
@@ -542,16 +543,31 @@ const SkillCard = ({ listing, onFavorite, isFavorited, onContact, onReport, onMe
           <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{listing.favorites || 0}</span>
           <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{timeAgo(listing.createdAt)}</span>
         </div>
-        {currentUserId && currentUserId !== listing.userId && (
+        {currentUserId && currentUserId !== listing.userId ? (
           <div className="flex gap-1.5">
+            <button onClick={() => onShare?.(listing)}
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/30 hover:text-indigo-400" title="Share">
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => onExchange?.(listing)}
+              className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs px-3 py-1.5 rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center gap-1" title="Propose Exchange">
+              <HeartHandshake className="w-3 h-3" /> Exchange
+            </button>
             <button onClick={() => onMessage?.(listing)}
-              className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs px-3 py-1.5 rounded-lg font-semibold hover:opacity-90 transition-opacity">
+              className="bg-white/10 border border-white/10 text-white/70 text-xs px-3 py-1.5 rounded-lg font-semibold hover:bg-white/15 transition-colors">
               Message
             </button>
-            <button onClick={() => onReport?.(listing)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/30 hover:text-white/60">
+            <button onClick={() => onReport?.(listing)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/30 hover:text-white/60" title="Report">
               <Flag className="w-3.5 h-3.5" />
             </button>
           </div>
+        ) : (
+          onShare && (
+            <button onClick={() => onShare(listing)}
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/30 hover:text-indigo-400" title="Share">
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
+          )
         )}
       </div>
     </div>
@@ -692,6 +708,303 @@ const ExchangeModal = ({ listing, onClose, onSend }) => {
           <Send className="w-4 h-4" /> Send Proposal
         </button>
       </div>
+    </div>
+  );
+};
+
+// --- Welcome Modal ---
+const WelcomeModal = ({ onClose }) => {
+  const [step, setStep] = useState(0);
+  const steps = [
+    { icon: UploadCloud, title: "Post a Skill", desc: "Share what you can teach and what you want to learn.", color: "from-indigo-500 to-blue-500" },
+    { icon: Search, title: "Find Matches", desc: "Browse listings and discover people with complementary skills.", color: "from-purple-500 to-pink-500" },
+    { icon: HeartHandshake, title: "Exchange Knowledge", desc: "Connect, agree on a swap, and start learning together!", color: "from-emerald-500 to-teal-500" },
+  ];
+  useEffect(() => {
+    const timer = setInterval(() => setStep(s => (s + 1) % steps.length), 3500);
+    const autoClose = setTimeout(onClose, 30000);
+    return () => { clearInterval(timer); clearTimeout(autoClose); };
+  }, []);
+  const handleGo = () => {
+    localStorage.setItem("skillswap_welcomed", "true");
+    onClose();
+  };
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={handleGo}>
+      <div className="relative glass-strong rounded-3xl w-full max-w-sm p-6 border border-white/10 shadow-2xl animate-slide-up" onClick={e => e.stopPropagation()}>
+        <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 pointer-events-none" />
+        <div className="relative">
+          <div className="text-center mb-5">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mx-auto mb-4 glow">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-xl font-black text-white mb-1">Welcome to SkillSwap! 🎉</h3>
+            <p className="text-sm text-white/50">Here's how to get started</p>
+          </div>
+          <div className="flex items-center justify-center gap-2 mb-5">
+            {steps.map((s, i) => (
+              <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === step ? "w-8 bg-gradient-to-r from-indigo-500 to-purple-500" : i < step ? "w-4 bg-indigo-500/50" : "w-4 bg-white/10"}`} />
+            ))}
+          </div>
+          <div className="glass rounded-2xl p-5 mb-5 border border-white/5 min-h-[120px] flex flex-col items-center justify-center text-center">
+            {(() => { const Icon = steps[step].icon; return (
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${steps[step].color} flex items-center justify-center mb-3`}>
+                <Icon className="w-6 h-6 text-white" />
+              </div>
+            ); })()}
+            <h4 className="font-bold text-white text-sm mb-1">{steps[step].title}</h4>
+            <p className="text-xs text-white/50">{steps[step].desc}</p>
+          </div>
+          <div className="flex gap-2 mb-4">
+            {steps.map((s, i) => (
+              <button key={i} onClick={() => setStep(i)}
+                className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${i === step ? "bg-indigo-500/20 border border-indigo-500/30 text-indigo-300" : "glass border border-white/5 text-white/40 hover:text-white/60"}`}>
+                {s.title.split(" ")[0]}
+              </button>
+            ))}
+          </div>
+          <button onClick={handleGo}
+            className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity glow flex items-center justify-center gap-2">
+            Let's Go! <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Settings Modal ---
+const SettingsModal = ({ user, userData, onUpdateProfile, onSignOut, onClose, showToast }) => {
+  const [activeTab, setActiveTab] = useState("profile");
+  const [displayName, setDisplayName] = useState(userData?.displayName || "");
+  const [bio, setBio] = useState(userData?.bio || "");
+  const [location, setLocation] = useState(userData?.location || "");
+  const [notifSounds, setNotifSounds] = useState(userData?.notifSounds ?? true);
+  const [emailNotifs, setEmailNotifs] = useState(userData?.emailNotifs ?? true);
+  const [saving, setSaving] = useState(false);
+  const tabs = [
+    { id: "profile", label: "Profile", icon: User },
+    { id: "preferences", label: "Preferences", icon: Settings },
+    { id: "account", label: "Account", icon: Shield },
+  ];
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onUpdateProfile({ displayName, bio, location, notifSounds, emailNotifs });
+      showToast("success", "Settings saved!");
+    } catch { showToast("error", "Failed to save settings."); }
+    setSaving(false);
+  };
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="glass-strong rounded-3xl w-full max-w-lg p-6 border border-white/10 shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-bold text-white">Settings</h3>
+          <button onClick={onClose}><X className="w-5 h-5 text-white/40 hover:text-white/80 transition-colors" /></button>
+        </div>
+        <div className="flex gap-1 mb-5 glass rounded-xl border border-white/5 p-1">
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${activeTab === t.id ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white" : "text-white/40 hover:text-white/70"}`}>
+              <t.icon className="w-3.5 h-3.5" /> {t.label}
+            </button>
+          ))}
+        </div>
+        {activeTab === "profile" && (
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-white/50 mb-1.5 block">Display Name</label>
+              <input value={displayName} onChange={e => setDisplayName(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-white/50 mb-1.5 block">Bio</label>
+              <textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell us about yourself..."
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500 resize-none h-20 transition-colors" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-white/50 mb-1.5 block">Location</label>
+              <input value={location} onChange={e => setLocation(e.target.value)} placeholder="City, Country"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500 transition-colors" />
+            </div>
+          </div>
+        )}
+        {activeTab === "preferences" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 glass rounded-xl border border-white/5">
+              <div className="flex items-center gap-3"><Moon className="w-4 h-4 text-indigo-400" /><div><p className="text-sm text-white font-medium">Dark Mode</p><p className="text-xs text-white/40">Always on for now</p></div></div>
+              <div className="w-10 h-5 rounded-full bg-indigo-500 flex items-center justify-end px-0.5 cursor-pointer"><div className="w-4 h-4 rounded-full bg-white" /></div>
+            </div>
+            <div className="flex items-center justify-between p-3 glass rounded-xl border border-white/5">
+              <div className="flex items-center gap-3"><Volume2 className="w-4 h-4 text-purple-400" /><div><p className="text-sm text-white font-medium">Notification Sounds</p><p className="text-xs text-white/40">Play sounds for new messages</p></div></div>
+              <button onClick={() => setNotifSounds(!notifSounds)}
+                className={`w-10 h-5 rounded-full flex items-center transition-colors ${notifSounds ? "bg-indigo-500 justify-end" : "bg-white/10 justify-start"} px-0.5`}>
+                <div className="w-4 h-4 rounded-full bg-white transition-transform" />
+              </button>
+            </div>
+            <div className="flex items-center justify-between p-3 glass rounded-xl border border-white/5">
+              <div className="flex items-center gap-3"><Mail className="w-4 h-4 text-emerald-400" /><div><p className="text-sm text-white font-medium">Email Notifications</p><p className="text-xs text-white/40">Receive email for important updates</p></div></div>
+              <button onClick={() => setEmailNotifs(!emailNotifs)}
+                className={`w-10 h-5 rounded-full flex items-center transition-colors ${emailNotifs ? "bg-indigo-500 justify-end" : "bg-white/10 justify-start"} px-0.5`}>
+                <div className="w-4 h-4 rounded-full bg-white transition-transform" />
+              </button>
+            </div>
+          </div>
+        )}
+        {activeTab === "account" && (
+          <div className="space-y-4">
+            <div className="glass rounded-xl border border-white/5 p-4">
+              <h4 className="text-sm font-semibold text-white mb-2">Change Password</h4>
+              <p className="text-xs text-white/40 mb-3">A password reset email will be sent to {user?.email}</p>
+              <button onClick={async () => { try { await sendPasswordResetEmail(auth, user?.email); showToast("success", "Password reset email sent!"); } catch { showToast("error", "Failed to send reset email."); } }}
+                className="bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 px-4 py-2 rounded-xl text-xs font-semibold hover:bg-indigo-500/30 transition-colors">
+                Send Reset Email
+              </button>
+            </div>
+            <div className="glass rounded-xl border border-white/5 p-4">
+              <h4 className="text-sm font-semibold text-white mb-2">Blocked Users</h4>
+              {(userData?.blockedUsers || []).length === 0 ? (
+                <p className="text-xs text-white/30">No blocked users</p>
+              ) : (
+                <div className="space-y-2">{(userData.blockedUsers || []).map(uid => (
+                  <div key={uid} className="flex items-center justify-between p-2 rounded-lg bg-white/3">
+                    <span className="text-xs text-white/60">{uid.slice(0, 12)}...</span>
+                    <button className="text-xs text-indigo-400 hover:text-indigo-300">Unblock</button>
+                  </div>
+                ))}</div>
+              )}
+            </div>
+            <div className="glass rounded-xl border border-red-500/10 p-4">
+              <h4 className="text-sm font-semibold text-red-400 mb-2 flex items-center gap-2"><AlertCircle className="w-4 h-4" /> Danger Zone</h4>
+              <p className="text-xs text-white/40 mb-3">Permanently delete your account and all data. This cannot be undone.</p>
+              <button className="bg-red-500/20 border border-red-500/20 text-red-400 px-4 py-2 rounded-xl text-xs font-semibold hover:bg-red-500/30 transition-colors">
+                Delete Account
+              </button>
+            </div>
+            <button onClick={onSignOut}
+              className="w-full flex items-center justify-center gap-2 bg-red-500/10 border border-red-500/10 text-red-400 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-500/20 transition-colors">
+              <LogOut className="w-4 h-4" /> Sign Out
+            </button>
+          </div>
+        )}
+        <button onClick={handleSave} disabled={saving}
+          className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white py-3 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity mt-5 flex items-center justify-center gap-2 disabled:opacity-50">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Save Settings
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- Confetti Effect ---
+const ConfettiEffect = ({ show }) => {
+  if (!show) return null;
+  const particles = useMemo(() => Array.from({ length: 50 }, (_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    delay: Math.random() * 0.8,
+    duration: 2 + Math.random() * 2,
+    size: 4 + Math.random() * 8,
+    color: ["#6366f1", "#a855f7", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#ef4444"][Math.floor(Math.random() * 7)],
+    shape: Math.random() > 0.5 ? "circle" : "square",
+    rotation: Math.random() * 360,
+  })), []);
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+      <style>{`
+        @keyframes confetti-fall {
+          0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+        .confetti-particle { position: absolute; top: -10px; animation: confetti-fall linear forwards; }
+      `}</style>
+      {particles.map(p => (
+        <div key={p.id} className="confetti-particle"
+          style={{
+            left: `${p.left}%`,
+            width: p.size, height: p.size,
+            backgroundColor: p.color,
+            borderRadius: p.shape === "circle" ? "50%" : "2px",
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            transform: `rotate(${p.rotation}deg)`,
+          }} />
+      ))}
+    </div>
+  );
+};
+
+// --- Keyboard Shortcuts Overlay ---
+const KeyboardShortcutsOverlay = ({ show, onClose }) => {
+  if (!show) return null;
+  const shortcuts = [
+    { key: "Ctrl + K", desc: "Focus Search", icon: Search },
+    { key: "Ctrl + N", desc: "New Post", icon: PlusCircle },
+    { key: "Ctrl + M", desc: "Open Messages", icon: MessageCircle },
+    { key: "Ctrl + F", desc: "Open Favorites", icon: Heart },
+    { key: "Ctrl + /", desc: "Toggle Shortcuts", icon: Keyboard },
+    { key: "Esc", desc: "Close Modals", icon: X },
+    { key: "1 - 9", desc: "Navigate Pages", icon: Compass },
+  ];
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="glass-strong rounded-3xl w-full max-w-sm p-6 border border-white/10 shadow-2xl animate-slide-up" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-bold text-white flex items-center gap-2"><Keyboard className="w-5 h-5 text-indigo-400" /> Keyboard Shortcuts</h3>
+          <button onClick={onClose}><X className="w-5 h-5 text-white/40 hover:text-white/80 transition-colors" /></button>
+        </div>
+        <div className="space-y-2">
+          {shortcuts.map(s => (
+            <div key={s.key} className="flex items-center justify-between p-3 rounded-xl glass border border-white/5 hover:border-white/10 transition-colors">
+              <div className="flex items-center gap-3">
+                <s.icon className="w-4 h-4 text-indigo-400" />
+                <span className="text-sm text-white/70">{s.desc}</span>
+              </div>
+              <kbd className="bg-white/10 border border-white/15 text-white/60 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold">{s.key}</kbd>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-white/30 text-center mt-4">Press <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs">Esc</kbd> to close</p>
+      </div>
+    </div>
+  );
+};
+
+// --- Typing Indicator ---
+const TypingIndicator = () => (
+  <div className="flex items-center gap-1.5 px-4 py-2 glass rounded-2xl rounded-bl-sm border border-white/10 w-fit">
+    {[0, 1, 2].map(i => (
+      <div key={i} className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+    ))}
+    <span className="text-xs text-white/30 ml-1">typing...</span>
+  </div>
+);
+
+// --- Floating Action Button ---
+const FloatingActionButton = ({ onPost, onSearch, onFavorites, fabOpen, onToggleFab, currentPage }) => {
+  if (["messages", "post"].includes(currentPage)) return null;
+  return (
+    <div className="fixed bottom-20 right-4 z-30 md:hidden flex flex-col items-end gap-2">
+      {fabOpen && (
+        <div className="flex flex-col gap-2 animate-slide-up">
+          <button onClick={() => { onPost(); onToggleFab(); }}
+            className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg glow-sm" title="Post Skill">
+            <PlusCircle className="w-5 h-5 text-white" />
+          </button>
+          <button onClick={() => { onSearch(); onToggleFab(); }}
+            className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center shadow-lg" title="Search">
+            <Search className="w-5 h-5 text-white/70" />
+          </button>
+          <button onClick={() => { onFavorites(); onToggleFab(); }}
+            className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center shadow-lg" title="Favorites">
+            <Heart className="w-5 h-5 text-white/70" />
+          </button>
+        </div>
+      )}
+      <button onClick={onToggleFab}
+        className={`w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center shadow-xl glow transition-transform duration-300 ${fabOpen ? "rotate-45" : ""}`}>
+        <PlusCircle className="w-6 h-6 text-white" />
+      </button>
     </div>
   );
 };
@@ -1198,7 +1511,7 @@ const SignupPage = ({ onSignup, onGoogle, onLogin }) => {
 // ============================================================
 
 // --- HOME PAGE ---
-const HomePage = ({ user, userData, listings, favorites, blockedUsers, onFavorite, onMessage, onNavigate, showToast }) => {
+const HomePage = ({ user, userData, listings, favorites, blockedUsers, onFavorite, onMessage, onNavigate, showToast, recentlyViewed, onExchange, onShare, onViewListing, onOpenSettings }) => {
   const suggestions = useMemo(() => matchingSuggestions(listings, user?.uid, userData), [listings, user, userData]);
   const trending = useMemo(() => trendingCats(listings), [listings]);
   const recentListings = useMemo(() => [...listings].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)).slice(0, 6), [listings]);
@@ -1308,7 +1621,7 @@ const HomePage = ({ user, userData, listings, favorites, blockedUsers, onFavorit
             {suggestions.map(l => (
               <SkillCard key={l.id} listing={l} onFavorite={onFavorite} isFavorited={favorites.includes(l.id)}
                 onMessage={onMessage} currentUserId={user?.uid} blockedUsers={blockedUsers}
-                onViewProfile={setProfileListing} />
+                onViewProfile={setProfileListing} onExchange={onExchange} onShare={onShare} onViewListing={onViewListing} />
             ))}
           </div>
         )}
@@ -1329,8 +1642,44 @@ const HomePage = ({ user, userData, listings, favorites, blockedUsers, onFavorit
             {recentListings.map(l => (
               <SkillCard key={l.id} listing={l} onFavorite={onFavorite} isFavorited={favorites.includes(l.id)}
                 onMessage={onMessage} currentUserId={user?.uid} blockedUsers={blockedUsers}
-                onViewProfile={setProfileListing} />
+                onViewProfile={setProfileListing} onExchange={onExchange} onShare={onShare} onViewListing={onViewListing} />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recently Viewed */}
+      {recentlyViewed && recentlyViewed.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-white flex items-center gap-2">
+              <Eye className="w-4 h-4 text-indigo-400" /> Recently Viewed
+            </h3>
+            <button onClick={() => onNavigate("explore")} className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors">
+              Explore more <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-2 hide-scrollbar">
+            {recentlyViewed.slice(0, 10).map(item => {
+              const cat = getCat(item.category);
+              const CatIcon = cat.icon;
+              return (
+                <div key={item.id} className="flex-shrink-0 w-48 glass rounded-xl p-4 border border-white/5 hover:border-white/15 transition-all cursor-pointer">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${userGrad(item.userId)} flex items-center justify-center text-xs font-bold text-white flex-shrink-0`}>
+                      {initials(item.userName)}
+                    </div>
+                    <span className="text-xs font-semibold text-white/70 truncate">{item.userName}</span>
+                  </div>
+                  <p className="text-sm font-bold text-white mb-1 truncate">{item.skillOffered}</p>
+                  <p className="text-xs text-indigo-400 mb-2 truncate">Wants: {item.skillWanted}</p>
+                  <div className="flex items-center gap-1.5">
+                    <CatIcon className="w-3 h-3 text-white/30" />
+                    <span className="text-xs text-white/30">{cat.label}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1344,7 +1693,7 @@ const HomePage = ({ user, userData, listings, favorites, blockedUsers, onFavorit
 };
 
 // --- EXPLORE PAGE ---
-const ExplorePage = ({ listings, favorites, blockedUsers, onFavorite, onMessage, user, showToast }) => {
+const ExplorePage = ({ listings, favorites, blockedUsers, onFavorite, onMessage, user, showToast, onExchange, onShare, onViewListing }) => {
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
   const [sort, setSort] = useState("newest");
@@ -1409,7 +1758,7 @@ const ExplorePage = ({ listings, favorites, blockedUsers, onFavorite, onMessage,
           {filtered.map(l => (
             <SkillCard key={l.id} listing={l} onFavorite={onFavorite} isFavorited={favorites.includes(l.id)}
               onMessage={onMessage} currentUserId={user?.uid} blockedUsers={blockedUsers}
-              onViewProfile={setProfileListing} onReport={setReportListing} />
+              onViewProfile={setProfileListing} onReport={setReportListing} onExchange={onExchange} onShare={onShare} onViewListing={onViewListing} />
           ))}
         </div>
       )}
@@ -1421,7 +1770,7 @@ const ExplorePage = ({ listings, favorites, blockedUsers, onFavorite, onMessage,
 };
 
 // --- MESSAGES PAGE ---
-const MessagesPage = ({ user, messages, onSendMessage, activeChat, setActiveChat, showToast }) => {
+const MessagesPage = ({ user, messages, onSendMessage, activeChat, setActiveChat, showToast, isTyping, setIsTyping }) => {
   const [newMsg, setNewMsg] = useState("");
   const [search, setSearch] = useState("");
   const messagesEndRef = useRef(null);
@@ -1455,11 +1804,29 @@ const MessagesPage = ({ user, messages, onSendMessage, activeChat, setActiveChat
 
   const handleSend = () => {
     if (!newMsg.trim() || !activeChat) return;
+    setIsTyping?.(false);
     onSendMessage(activeChat, newMsg.trim());
     setNewMsg("");
   };
 
+  const handleTyping = (value) => {
+    setNewMsg(value);
+    if (value.trim() && !isTyping) setIsTyping?.(true);
+    if (!value.trim() && isTyping) setIsTyping?.(false);
+  };
+
   const filteredConvos = conversations.filter(c => !search || c.name?.toLowerCase().includes(search.toLowerCase()));
+
+  const getMessageDateLabel = (timestamp) => {
+    if (!timestamp) return "";
+    const date = new Date(timestamp.seconds * 1000);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today - 86400000);
+    if (date >= today) return "Today";
+    if (date >= yesterday) return "Yesterday";
+    return date.toLocaleDateString();
+  };
 
   return (
     <div className="h-[calc(100vh-180px)] md:h-[calc(100vh-120px)] flex rounded-2xl overflow-hidden glass border border-white/5">
@@ -1539,22 +1906,45 @@ const MessagesPage = ({ user, messages, onSendMessage, activeChat, setActiveChat
             )}
             {chatMessages.map((m, i) => {
               const isMine = m.fromUserId === user?.uid;
+              const prevMsg = chatMessages[i - 1];
+              const showDateSep = i === 0 || getMessageDateLabel(m.createdAt) !== getMessageDateLabel(prevMsg?.createdAt);
               return (
-                <div key={i} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${isMine ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-br-sm" : "glass border border-white/10 text-white/80 rounded-bl-sm"}`}>
-                    <p className="leading-relaxed">{m.text}</p>
-                    <p className={`text-xs mt-1 ${isMine ? "text-white/60" : "text-white/30"}`}>{timeAgo(m.createdAt)}</p>
+                <div key={i}>
+                  {showDateSep && (
+                    <div className="flex items-center gap-3 my-3">
+                      <div className="flex-1 h-px bg-white/5" />
+                      <span className="text-xs text-white/30 font-medium">{getMessageDateLabel(m.createdAt)}</span>
+                      <div className="flex-1 h-px bg-white/5" />
+                    </div>
+                  )}
+                  <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${isMine ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-br-sm" : "glass border border-white/10 text-white/80 rounded-bl-sm"}`}>
+                      <p className="leading-relaxed">{m.text}</p>
+                      <div className={`flex items-center gap-1.5 mt-1 ${isMine ? "justify-end" : ""}`}>
+                        <p className={`text-xs ${isMine ? "text-white/60" : "text-white/30"}`}>{timeAgo(m.createdAt)}</p>
+                        {isMine && (
+                          <span className="text-indigo-200">
+                            {m.read ? <CheckCircle className="w-3 h-3 text-indigo-200" /> : <Check className="w-3 h-3 text-white/40" />}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
             })}
+            {isTyping && (
+              <div className="flex justify-start">
+                <TypingIndicator />
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
           <div className="p-3 border-t border-white/5">
             <div className="flex gap-2 glass rounded-2xl border border-white/10 p-2">
-              <input value={newMsg} onChange={e => setNewMsg(e.target.value)}
+              <input value={newMsg} onChange={e => handleTyping(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()}
                 placeholder="Type a message..."
                 className="flex-1 bg-transparent text-sm text-white placeholder:text-white/25 focus:outline-none px-2" />
@@ -1757,7 +2147,7 @@ const PostPage = ({ user, userData, onSubmit, editingListing, onCancelEdit, show
 };
 
 // --- FAVORITES PAGE ---
-const FavoritesPage = ({ listings, favorites, blockedUsers, onFavorite, onMessage, user }) => {
+const FavoritesPage = ({ listings, favorites, blockedUsers, onFavorite, onMessage, user, onExchange, onShare, onViewListing }) => {
   const [catFilter, setCatFilter] = useState("all");
   const favListings = listings.filter(l => favorites.includes(l.id) && !isBlocked(blockedUsers, l.userId));
   const filtered = catFilter === "all" ? favListings : favListings.filter(l => l.category === catFilter);
@@ -1783,7 +2173,7 @@ const FavoritesPage = ({ listings, favorites, blockedUsers, onFavorite, onMessag
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(l => (
             <SkillCard key={l.id} listing={l} onFavorite={onFavorite} isFavorited={true}
-              onMessage={onMessage} currentUserId={user?.uid} blockedUsers={blockedUsers} />
+              onMessage={onMessage} currentUserId={user?.uid} blockedUsers={blockedUsers} onExchange={onExchange} onShare={onShare} onViewListing={onViewListing} />
           ))}
         </div>
       )}
@@ -2276,7 +2666,7 @@ const AnalyticsPage = ({ user, listings, messages, reviews, showToast }) => {
 // ============================================================
 
 // --- Header ---
-const Header = ({ user, userData, listings, notifications, onNotifMarkAll, currentPage, onNavigate, searchQuery, onSearch, darkMode, onToggleDark, onSignOut }) => {
+const Header = ({ user, userData, listings, notifications, onNotifMarkAll, currentPage, onNavigate, searchQuery, onSearch, darkMode, onToggleDark, onSignOut, onOpenSettings, onToggleShortcuts }) => {
   const [showNotifs, setShowNotifs] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -2302,6 +2692,16 @@ const Header = ({ user, userData, listings, notifications, onNotifMarkAll, curre
         </div>
 
         <div className="flex items-center gap-1.5 ml-auto">
+          {/* Keyboard shortcuts */}
+          <button onClick={onToggleShortcuts} className="p-2 rounded-xl hover:bg-white/10 transition-colors text-white/30 hover:text-white/70" title="Keyboard Shortcuts (Ctrl+/)">
+            <HelpCircle className="w-4 h-4" />
+          </button>
+
+          {/* Settings */}
+          <button onClick={onOpenSettings} className="p-2 rounded-xl hover:bg-white/10 transition-colors text-white/40 hover:text-white/80" title="Settings">
+            <Settings className="w-4 h-4" />
+          </button>
+
           {/* Dark mode toggle */}
           <button onClick={onToggleDark} className="p-2 rounded-xl hover:bg-white/10 transition-colors text-white/40 hover:text-white/80">
             {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -2443,6 +2843,22 @@ export default function App() {
   const [showScroll, setShowScroll] = useState(false);
   const [exchangeTarget, setExchangeTarget] = useState(null);
 
+  // Phase 1: New UI states
+  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem("skillswap_welcomed"));
+  const [showSettings, setShowSettings] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+
+  // Load recentlyViewed from userData when available
+  useEffect(() => {
+    if (userData?.recentlyViewed) {
+      setRecentlyViewed(userData.recentlyViewed);
+    }
+  }, [userData?.recentlyViewed]);
+
   const showToast = useCallback((type, message) => setToast({ type, message }), []);
   const navigateTo = useCallback((page) => { setCurrentPage(page); window.scrollTo(0, 0); }, []);
 
@@ -2452,6 +2868,59 @@ export default function App() {
     window.addEventListener("scroll", handler);
     return () => window.removeEventListener("scroll", handler);
   }, []);
+
+  // Keyboard shortcuts listener
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case "k":
+            e.preventDefault();
+            document.querySelector("header input")?.focus();
+            break;
+          case "n":
+            e.preventDefault();
+            navigateTo("post");
+            break;
+          case "m":
+            e.preventDefault();
+            navigateTo("messages");
+            break;
+          case "f":
+            e.preventDefault();
+            navigateTo("favorites");
+            break;
+          case "/":
+            e.preventDefault();
+            setShowShortcuts(s => !s);
+            break;
+        }
+      }
+      if (e.key === "Escape") {
+        if (showShortcuts) setShowShortcuts(false);
+        if (showSettings) setShowSettings(false);
+        if (showWelcome) setShowWelcome(false);
+        setFabOpen(false);
+      }
+      // Number key navigation (1-9)
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key >= "1" && e.key <= "9") {
+        const idx = parseInt(e.key) - 1;
+        if (idx < NAV_ITEMS.length && !e.target.closest("input, textarea, select")) {
+          navigateTo(NAV_ITEMS[idx].id);
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showShortcuts, showSettings, showWelcome, navigateTo]);
+
+  // Confetti auto-dismiss
+  useEffect(() => {
+    if (showConfetti) {
+      const t = setTimeout(() => setShowConfetti(false), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [showConfetti]);
 
   // Firebase Auth
   useEffect(() => {
@@ -2648,6 +3117,37 @@ export default function App() {
     if (query.trim()) navigateTo("explore");
   };
 
+  // Phase 1: Share listing
+  const handleShareListing = async (listing) => {
+    const text = `SkillSwap: ${listing.skillOffered} (offered) ↔ ${listing.skillWanted} (wanted) by ${listing.userName}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("success", "Listing copied to clipboard!");
+    } catch {
+      showToast("error", "Failed to copy to clipboard.");
+    }
+  };
+
+  // Phase 1: View listing (add to recentlyViewed)
+  const handleViewListing = useCallback(async (listing) => {
+    if (!user) return;
+    setRecentlyViewed(prev => {
+      const filtered = prev.filter(l => l.id !== listing.id);
+      const updated = [{ id: listing.id, userId: listing.userId, userName: listing.userName, skillOffered: listing.skillOffered, skillWanted: listing.skillWanted, category: listing.category, viewedAt: Date.now() }, ...filtered].slice(0, 20);
+      // Save to Firestore
+      if (user) {
+        updateDoc(doc(db, "users", user.uid), { recentlyViewed: updated }).catch(() => {});
+      }
+      return updated;
+    });
+  }, [user]);
+
+  // Phase 1: Open settings
+  const handleOpenSettings = () => setShowSettings(true);
+
+  // Phase 1: Toggle keyboard shortcuts
+  const handleToggleShortcuts = () => setShowShortcuts(s => !s);
+
   // Loading State
   if (authLoading) return (
     <div className="min-h-screen bg-[#020617] flex items-center justify-center">
@@ -2673,18 +3173,18 @@ export default function App() {
 
   // Render current page content
   const renderPage = () => {
-    const props = { user, userData, listings, favorites, blockedUsers, reviews, messages, onFavorite: handleFavorite, onMessage: handleMessage, onNavigate: navigateTo, showToast };
+    const props = { user, userData, listings, favorites, blockedUsers, reviews, messages, onFavorite: handleFavorite, onMessage: handleMessage, onNavigate: navigateTo, showToast, onExchange: setExchangeTarget, onShare: handleShareListing, onViewListing: handleViewListing, onOpenSettings: handleOpenSettings };
     switch (currentPage) {
-      case "home": return <HomePage {...props} />;
+      case "home": return <HomePage {...props} recentlyViewed={recentlyViewed} />;
       case "explore": return <ExplorePage {...props} searchQuery={searchQuery} />;
-      case "messages": return <MessagesPage user={user} messages={messages} onSendMessage={handleSendMessage} activeChat={activeChat} setActiveChat={setActiveChat} showToast={showToast} />;
+      case "messages": return <MessagesPage user={user} messages={messages} onSendMessage={handleSendMessage} activeChat={activeChat} setActiveChat={setActiveChat} showToast={showToast} isTyping={isTyping} setIsTyping={setIsTyping} />;
       case "post": return <PostPage user={user} userData={userData} onSubmit={handleSubmitListing} editingListing={editingListing} onCancelEdit={() => { setEditingListing(null); navigateTo("mylistings"); }} showToast={showToast} listings={listings} />;
       case "favorites": return <FavoritesPage {...props} />;
       case "mylistings": return <MyListingsPage user={user} listings={listings} reviews={reviews} onEdit={(l) => { setEditingListing(l); navigateTo("post"); }} onDelete={(l) => setDeleteTarget(l)} />;
       case "leaderboard": return <LeaderboardPage listings={listings} reviews={reviews} currentUserId={user?.uid} />;
       case "profile": return <ProfilePage {...props} onUpdateProfile={handleUpdateProfile} onSignOut={handleSignOut} />;
       case "analytics": return <AnalyticsPage user={user} listings={listings} messages={messages} reviews={reviews} showToast={showToast} />;
-      default: return <HomePage {...props} />;
+      default: return <HomePage {...props} recentlyViewed={recentlyViewed} />;
     }
   };
 
@@ -2697,6 +3197,8 @@ export default function App() {
         searchQuery={searchQuery} onSearch={handleSearch}
         darkMode={darkMode} onToggleDark={() => setDarkMode(!darkMode)}
         onSignOut={handleSignOut}
+        onOpenSettings={handleOpenSettings}
+        onToggleShortcuts={handleToggleShortcuts}
       />
 
       <div className="flex">
@@ -2718,6 +3220,28 @@ export default function App() {
             setExchangeTarget(null);
           }} />
       )}
+
+      {/* Phase 1: Welcome Modal */}
+      {showWelcome && <WelcomeModal onClose={() => setShowWelcome(false)} />}
+
+      {/* Phase 1: Settings Modal */}
+      {showSettings && <SettingsModal user={user} userData={userData} onUpdateProfile={handleUpdateProfile} onSignOut={handleSignOut} onClose={() => setShowSettings(false)} showToast={showToast} />}
+
+      {/* Phase 1: Keyboard Shortcuts Overlay */}
+      <KeyboardShortcutsOverlay show={showShortcuts} onClose={() => setShowShortcuts(false)} />
+
+      {/* Phase 1: Confetti Effect */}
+      <ConfettiEffect show={showConfetti} />
+
+      {/* Phase 1: Floating Action Button */}
+      <FloatingActionButton
+        currentPage={currentPage}
+        fabOpen={fabOpen}
+        onToggleFab={() => setFabOpen(f => !f)}
+        onPost={() => navigateTo("post")}
+        onSearch={() => navigateTo("explore")}
+        onFavorites={() => navigateTo("favorites")}
+      />
 
       {/* Toast */}
       <Toast toast={toast} onClose={() => setToast(null)} />

@@ -13,9 +13,14 @@ import {
   Globe, MapPin, Calendar, Tag, Users, ThumbsUp, ThumbsDown, Flag, Trash2, Edit3,
   Copy, Share2, CheckCircle, XCircle, AlertCircle, Info, AlertTriangle, Upload,
   Camera, Image, ChevronUp, Settings, Lock, Moon, Sun, ExternalLink, RefreshCw,
-  Activity, Target, Gift, Crown, Medal, Sparkles, Brain, Handshake, Mic, Code, Palette,
-  Music, BookOpen, Dumbbell, ChefHat, Languages, CameraIcon, Film, PenTool, Lightbulb
+  Activity, Target, Gift, Crown, Medal, Sparkles, Brain, Mic, Code, Palette,
+  Music, BookOpen, Dumbbell, ChefHat, Languages, CameraIcon, Film, PenTool, Lightbulb,
+  LogIn
 } from 'lucide-react';
+
+// Handshake icon — local fallback (not available in all lucide-react versions)
+const Handshake = (props) => React.createElement('svg', { xmlns: 'http://www.w3.org/2000/svg', width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', ...props }, React.createElement('path', { d: 'm11 17 2 2a1 1 0 1 0 3-3' }), React.createElement('path', { d: 'm14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4' }), React.createElement('path', { d: 'm21 3 1 11h-2' }), React.createElement('path', { d: 'M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3' }), React.createElement('path', { d: 'M3 4h8' }));
+
 import { initializeApp } from 'firebase/app';
 import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,

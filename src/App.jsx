@@ -200,6 +200,67 @@ const todayKey = () => new Date().toISOString().split("T")[0];
 
 const isBlocked = (blockedUsers, userId) => Array.isArray(blockedUsers) && blockedUsers.includes(userId);
 
+// ============================================================
+// FIRESTORE SECURITY RULES — Paste in Firebase Console
+// ============================================================
+const FIRESTORE_RULES = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Users: read/write own document only
+    match /users/{userId} {
+      allow read, write: if isAuth() && userId == request.auth.uid;
+    }
+
+    // Listings: anyone authenticated can read, only owner can create/update/delete
+    match /listings/{listingId} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuth() && resource.data.userId == request.auth.uid;
+    }
+
+    // Messages: users can read their own conversations, create messages as sender
+    match /messages/{messageId} {
+      allow read: if isAuth() && (
+        resource.data.fromUserId == request.auth.uid ||
+        resource.data.toUserId == request.auth.uid
+      );
+      allow create: if isAuth() && request.resource.data.fromUserId == request.auth.uid;
+      allow update: if isAuth();
+    }
+
+    // Reviews: anyone authenticated can read, create and manage own reviews
+    match /reviews/{reviewId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update, delete: if isAuth();
+    }
+
+    // Notifications: users can read/write their own notifications
+    match /notifications/{notifId} {
+      allow read: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth();
+      allow update: if isAuth();
+    }
+
+    // Reports: authenticated users can create and read
+    match /reports/{reportId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+    }
+
+    // Exchanges: authenticated users can participate
+    match /exchanges/{exchangeId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth();
+    }
+  }
+}`;
+
 const heatmapData = (activityLog) => {
   const weeks = 12;
   const days = 7;
@@ -2854,6 +2915,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [firestoreError, setFirestoreError] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
@@ -2967,7 +3029,15 @@ export default function App() {
           } catch (activityErr) {
             console.warn("Activity log update skipped:", activityErr.message);
           }
-        } catch (err) { console.error("User doc error:", err); }
+        } catch (err) {
+          console.error("User doc error:", err);
+          if (err?.code === "permission-denied" || err?.message?.includes("permissions")) {
+            setFirestoreError(true);
+            console.log("%c⚠️ FIRESTORE PERMISSION ERROR!", "color: red; font-size: 16px; font-weight: bold;");
+            console.log("%cFix: Go to Firebase Console → Firestore Database → Rules tab → DELETE existing rules → PASTE the rules below → Click Publish", "color: orange; font-size: 12px;");
+            console.log(FIRESTORE_RULES);
+          }
+        }
         setCurrentPage("home");
       } else {
         setUser(null);
@@ -3077,7 +3147,12 @@ export default function App() {
       }
     } catch (err) {
       console.error("handleSubmitListing error:", err.code, err.message);
-      showToast("error", "Failed to save listing: " + (err.message || "Check Firestore rules."));
+      if (err?.code === "permission-denied" || err?.message?.includes("permissions")) {
+        setFirestoreError(true);
+        showToast("error", "Permission denied! Update Firestore rules (use 'Copy Rules' button in the banner).");
+      } else {
+        showToast("error", "Failed to save listing: " + (err.message || "Unknown error"));
+      }
       throw err;
     }
   };
@@ -3091,7 +3166,12 @@ export default function App() {
       showToast("success", "Listing deleted.");
     } catch (err) {
       console.error("handleDeleteListing error:", err.code, err.message);
-      showToast("error", "Failed to delete: " + (err.message || ""));
+      if (err?.code === "permission-denied" || err?.message?.includes("permissions")) {
+        setFirestoreError(true);
+        showToast("error", "Permission denied! Update Firestore rules.");
+      } else {
+        showToast("error", "Failed to delete: " + (err.message || "Unknown error"));
+      }
     }
     setDeleteTarget(null);
   };
@@ -3108,7 +3188,12 @@ export default function App() {
       } else {
         await setDoc(userRef, { uid: user.uid, displayName: user.displayName || "Anonymous", email: user.email || "", photoURL: user.photoURL || "", bio: "", blockedUsers: [], favorites: newFavs, recentlyViewed: [], activityLog: {}, createdAt: serverTimestamp(), streak: 0 });
       }
-    } catch (err) { console.error("handleFavorite error:", err.message); }
+    } catch (err) {
+      console.error("handleFavorite error:", err.message);
+      if (err?.code === "permission-denied" || err?.message?.includes("permissions")) {
+        setFirestoreError(true);
+      }
+    }
     // Update listing favorites count
     if (!listingId.startsWith("demo")) {
       try {
@@ -3141,7 +3226,12 @@ export default function App() {
       console.log("Message sent, doc ID:", docRef.id);
     } catch (err) {
       console.error("handleSendMessage error:", err.code, err.message);
-      showToast("error", "Failed to send: " + (err.message || "Check Firestore rules."));
+      if (err?.code === "permission-denied" || err?.message?.includes("permissions")) {
+        setFirestoreError(true);
+        showToast("error", "Permission denied! Please update your Firestore security rules. See console for instructions.");
+      } else {
+        showToast("error", "Failed to send: " + (err.message || "Unknown error"));
+      }
     }
   };
 
@@ -3161,6 +3251,9 @@ export default function App() {
       }
     } catch (err) {
       console.error("handleUpdateProfile error:", err);
+      if (err?.code === "permission-denied" || err?.message?.includes("permissions")) {
+        setFirestoreError(true);
+      }
       throw err;
     }
   };
@@ -3285,6 +3378,21 @@ export default function App() {
             showToast("success", "Exchange proposal sent!");
             setExchangeTarget(null);
           }} />
+      )}
+
+      {/* Firestore Rules Warning Banner */}
+      {firestoreError && (
+        <div className="fixed top-0 left-0 right-0 z-[10000] bg-gradient-to-r from-red-600 to-orange-600 text-white px-4 py-3 text-center text-sm font-semibold animate-slide-down shadow-lg shadow-red-500/20">
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>Firebase permissions error! Open Firebase Console → Firestore Database → Rules tab → paste rules (check console for details).</span>
+            <button onClick={() => { navigator.clipboard.writeText(FIRESTORE_RULES); showToast("success", "Rules copied! Paste in Firebase Console → Firestore → Rules"); }}
+              className="ml-2 bg-white/20 hover:bg-white/30 px-3 py-1 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 flex-shrink-0">
+              <Copy className="w-3 h-3" /> Copy Rules
+            </button>
+            <button onClick={() => setFirestoreError(false)} className="ml-1 text-white/60 hover:text-white"><X className="w-4 h-4" /></button>
+          </div>
+        </div>
       )}
 
       {/* Phase 1: Welcome Modal */}
